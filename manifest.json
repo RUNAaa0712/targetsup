@@ -1,0 +1,20 @@
+{
+    "short_name": "n曲ソート",
+    "name": " n曲ソート",
+    "icons": [
+      {
+        "src": "icon-192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "icon-512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "index.html",
+    "display": "standalone",
+    "theme_color": "#05080c",
+    "background_color": "#05080c"
+  }

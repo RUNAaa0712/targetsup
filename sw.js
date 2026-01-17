@@ -1,4 +1,4 @@
-const CACHE_NAME = "n-song-sort-v1";
+const CACHE_NAME = "n-song-sort-v1.01";
 const urlsToCache = [
   "index.html",
   "https://unpkg.com/vue@3/dist/vue.global.js",

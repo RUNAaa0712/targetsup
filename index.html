@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -8,60 +9,421 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         :root {
-            --cyan: #00e5ff; --magenta: #ff00ff; --bg: #05080c; --glass: rgba(16, 23, 33, 0.92);
-            --master: #9e27b0; --ultima: #e91e63; --ajc: #00e5ff; --aj: #ffeb3b; --fc: #4caf50;
+            --cyan: #00e5ff;
+            --magenta: #ff00ff;
+            --bg: #05080c;
+            --glass: rgba(16, 23, 33, 0.92);
+            --master: #9e27b0;
+            --ultima: #e91e63;
+            --ajc: #00e5ff;
+            --aj: #ffeb3b;
+            --fc: #4caf50;
         }
-        body { background: var(--bg); color: #fff; margin: 0; font-family: 'Avenir', 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', sans-serif; overflow: hidden; }
-        .cyber-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-image: linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.05) 1px, transparent 1px); background-size: 35px 35px; z-index: -1; }
 
-        .page-fade-enter-active, .page-fade-leave-active { transition: all 0.4s ease; }
-        .page-fade-enter-from { opacity: 0; transform: translateX(30px); }
-        .page-fade-leave-to { opacity: 0; transform: translateX(-30px); }
+        body {
+            background: var(--bg);
+            color: #fff;
+            margin: 0;
+            font-family: 'Avenir', 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', sans-serif;
+            overflow: hidden;
+        }
 
-        #app { display: flex; flex-direction: column; height: 100vh; }
-        main { flex: 1; overflow-y: auto; padding: 15px 15px 100px; box-sizing: border-box; }
+        .cyber-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 35px 35px;
+            z-index: -1;
+        }
 
-        .neon-title { font-size: 20px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); margin-bottom: 20px; border-left: 5px solid var(--cyan); padding-left: 10px; letter-spacing: 1px; }
-        .glass-card { background: var(--glass); border: 1px solid rgba(0,229,255,0.25); border-radius: 12px; padding: 18px; margin-bottom: 15px; backdrop-filter: blur(10px); }
+        .page-fade-enter-active,
+        .page-fade-leave-active {
+            transition: all 0.4s ease;
+        }
 
-        input, select { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #fff; padding: 12px; outline: none; font-size: 16px; width: 100%; box-sizing: border-box; }
-        .btn-action { background: var(--cyan); color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 5px; }
+        .page-fade-enter-from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
 
-        .section-label { font-size: 10px; color: #777; margin: 12px 0 6px; display: block; font-weight: bold; text-transform: uppercase; }
-        .chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 5px; }
-        .chip-group.scroll-x { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; scrollbar-width: none; }
-        .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #444; font-size: 11px; cursor: pointer; color: #666; transition: 0.2s; font-weight: bold; white-space: nowrap; }
-        .chip.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.15); box-shadow: 0 0 8px rgba(0,229,255,0.2); }
+        .page-fade-leave-to {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
 
-        .sync-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,8,12,0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .sync-panel { border: 1px solid var(--cyan); padding: 30px; background: #05080c; border-radius: 15px; width: 300px; text-align: center; }
-        .progress-container { width: 100%; height: 6px; background: #1a232e; border-radius: 3px; overflow: hidden; margin: 15px 0; }
-        .progress-fill { height: 100%; background: var(--cyan); transition: width 0.3s; }
-        .sync-log { font-size: 10px; color: #666; text-align: left; height: 80px; overflow-y: auto; border-top: 1px solid #222; padding-top: 10px; line-height: 1.5; scrollbar-width: none; }
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-        .song-item { display: flex; align-items: center; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 5px solid #333; }
-        .song-item img { width: 48px; height: 48px; border-radius: 4px; margin-right: 12px; }
-        .song-info { flex: 1; min-width: 0; }
-        .song-title { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .lamp-badge { font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-left: 5px; font-weight: bold; }
-        .lamp-badge.AJC { background: var(--ajc); color: #000; box-shadow: 0 0 8px var(--ajc); }
-        .lamp-badge.AJ { background: var(--aj); color: #000; }
-        .lamp-badge.FC { background: var(--fc); color: #fff; }
-        .score-val { font-family: 'Courier New', monospace; color: var(--cyan); font-weight: bold; font-size: 15px; }
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 15px 100px;
+            box-sizing: border-box;
+        }
 
-        .check-btn { width: 32px; height: 32px; border: 2px solid #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; margin-left: 10px; font-size: 18px; color: transparent; }
-        .check-btn.checked { border-color: var(--cyan); background: rgba(0,229,255,0.2); color: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+        .neon-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--cyan);
+            padding-left: 10px;
+            letter-spacing: 1px;
+        }
 
-        .btn-mission { width: 100%; padding: 18px; border: none; border-radius: 10px; background: linear-gradient(90deg, #00acc1, var(--cyan)); color: #fff; font-size: 18px; font-weight: 900; animation: pulse 2.5s infinite; cursor: pointer; letter-spacing: 2px; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 229, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); } }
+        .glass-card {
+            background: var(--glass);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
 
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; border-top: 1px solid #222; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #444; font-size: 10px; font-weight: bold; transition: 0.3s; }
-        .nav-item.active { color: var(--cyan); border-top: 3px solid var(--cyan); background: linear-gradient(to top, rgba(0,229,255,0.12), transparent); }
+        input,
+        select {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 6px;
+            color: #fff;
+            padding: 12px;
+            outline: none;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-        [v-cloak] { display: none; }
+        .btn-action {
+            background: var(--cyan);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .section-label {
+            font-size: 10px;
+            color: #777;
+            margin: 12px 0 6px;
+            display: block;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 5px;
+        }
+
+        .chip-group.scroll-x {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            font-size: 11px;
+            cursor: pointer;
+            color: #666;
+            transition: 0.2s;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .chip.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: rgba(0, 229, 255, 0.15);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+        }
+
+        .sync-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 12, 0.95);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sync-panel {
+            border: 1px solid var(--cyan);
+            padding: 30px;
+            background: #05080c;
+            border-radius: 15px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #1a232e;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--cyan);
+            transition: width 0.3s;
+        }
+
+        .sync-log {
+            font-size: 10px;
+            color: #666;
+            text-align: left;
+            height: 80px;
+            overflow-y: auto;
+            border-top: 1px solid #222;
+            padding-top: 10px;
+            line-height: 1.5;
+            scrollbar-width: none;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 5px solid #333;
+        }
+
+        .song-item img {
+            width: 48px;
+            height: 48px;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+
+        .song-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .song-title {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 4px;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lamp-badge {
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .lamp-badge.AJC {
+            background: var(--ajc);
+            color: #000;
+            box-shadow: 0 0 8px var(--ajc);
+        }
+
+        .lamp-badge.AJ {
+            background: var(--aj);
+            color: #000;
+        }
+
+        .lamp-badge.FC {
+            background: var(--fc);
+            color: #fff;
+        }
+
+        .score-val {
+            font-family: 'Courier New', monospace;
+            color: var(--cyan);
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .check-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-left: 10px;
+            font-size: 18px;
+            color: transparent;
+        }
+
+        .check-btn.checked {
+            border-color: var(--cyan);
+            background: rgba(0, 229, 255, 0.2);
+            color: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .btn-mission {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #00acc1, var(--cyan));
+            color: #fff;
+            font-size: 18px;
+            font-weight: 900;
+            animation: pulse 2.5s infinite;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(0, 229, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 229, 255, 0);
+            }
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 75px;
+            background: #000;
+            display: flex;
+            border-top: 1px solid #222;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #444;
+            font-size: 10px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .nav-item.active {
+            color: var(--cyan);
+            border-top: 3px solid var(--cyan);
+            background: linear-gradient(to top, rgba(0, 229, 255, 0.12), transparent);
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .const-header {
+            color: var(--cyan);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            margin-bottom: 5px;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+        }
+
+        .chart-item {
+            position: relative;
+            background: #000;
+            aspect-ratio: 1/1;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .chart-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.75;
+        }
+
+        .chart-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-top: 1px solid rgba(0, 229, 255, 0.25);
+            padding: 1px 0;
+        }
+
+        .overlay-text {
+            color: var(--cyan);
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 6.5px;
+            line-height: 1.1;
+            letter-spacing: -0.2px;
+        }
+
+        .overlay-text.bold {
+            font-weight: bold;
+            font-size: 7px;
+        }
+
+        .overlay-text.small {
+            font-size: 5px;
+        }
+
+        .score-input {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--cyan);
+            color: #fff;
+            padding: 5px;
+            width: 100px;
+            font-size: 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        const-group {
+            content-visibility: auto;
+            contain-intrinsic-size: 100px 500px;
+            /* 推定のサイズを伝えてガタつきを抑える */
+        }
     </style>
 </head>
+
 <body>
     <div id="app" v-cloak>
         <div class="cyber-bg"></div>
@@ -87,29 +449,38 @@
                         <div v-if="!isLoggedIn">
                             <input v-model="auth.userId" placeholder="ユーザーID (半角英数字)">
                             <input v-model="auth.password" type="password" placeholder="パスワード" style="margin-top:10px;">
-                            <button @click="handleAuth('login')" class="btn-action" style="margin-top:15px;">ログイン</button>
-                            <button @click="handleAuth('register')" class="btn-action" style="background:#444; color:#fff;">新規登録</button>
+                            <button @click="handleAuth('login')" class="btn-action"
+                                style="margin-top:15px;">ログイン</button>
+                            <button @click="handleAuth('register')" class="btn-action"
+                                style="background:#444; color:#fff;">新規登録</button>
                         </div>
                         <div v-else>
                             <p>ログイン中: <span style="color:var(--cyan)">{{auth.userId}}</span></p>
                             <button @click="loadAndSync" class="btn-action">全データの同期実行</button>
-                            <button @click="logout" class="btn-action" style="background:#444; color:#fff; margin-top:10px;">ログアウト</button>
+                            <button @click="logout" class="btn-action"
+                                style="background:#444; color:#fff; margin-top:10px;">ログアウト</button>
                         </div>
                     </div>
 
                     <div class="glass-card" v-if="isLoggedIn">
                         <span class="section-label">同期対象設定 (マージ条件)</span>
                         <div class="chip-group">
-                            <div v-for="s in scoreFilterList" :class="['chip', {active: settings.syncScores.includes(s.label)}]" @click="toggle(settings.syncScores, s.label)">{{s.label}}</div>
+                            <div v-for="s in scoreFilterList"
+                                :class="['chip', {active: settings.syncScores.includes(s.label)}]"
+                                @click="toggle(settings.syncScores, s.label)">{{s.label}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="d in diffList" :class="['chip', {active: settings.syncDiffs.includes(d)}]" @click="toggle(settings.syncDiffs, d)">{{d}}</div>
+                            <div v-for="d in diffList" :class="['chip', {active: settings.syncDiffs.includes(d)}]"
+                                @click="toggle(settings.syncDiffs, d)">{{d}}</div>
                         </div>
                         <div class="chip-group scroll-x">
-                            <div v-for="l in levelList" :class="['chip', {active: settings.syncLevels.includes(l)}]" @click="toggle(settings.syncLevels, l)">{{l}}</div>
+                            <div v-for="l in levelList" :class="['chip', {active: settings.syncLevels.includes(l)}]"
+                                @click="toggle(settings.syncLevels, l)">{{l}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']" :class="['chip', {active: settings.syncLamps.includes(lp)}]" @click="toggle(settings.syncLamps, lp)">{{lp}}</div>
+                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
+                                :class="['chip', {active: settings.syncLamps.includes(lp)}]"
+                                @click="toggle(settings.syncLamps, lp)">{{lp}}</div>
                         </div>
                     </div>
                 </div>
@@ -118,23 +489,32 @@
                     <h1 class="neon-title">目標リスト (残り: {{remainingMusic.length}})</h1>
                     <div class="glass-card" style="padding:10px;">
                         <div class="chip-group">
-                            <div v-for="d in diffList" :class="['chip', {active: filters.diffs.includes(d)}]" @click="toggle(filters.diffs, d)">{{d}}</div>
+                            <div v-for="d in diffList" :class="['chip', {active: filters.diffs.includes(d)}]"
+                                @click="toggle(filters.diffs, d)">{{d}}</div>
                         </div>
                         <div class="chip-group scroll-x">
-                            <div v-for="l in levelList" :class="['chip', {active: filters.levels.includes(l)}]" @click="toggle(filters.levels, l)">{{l}}</div>
+                            <div v-for="l in levelList" :class="['chip', {active: filters.levels.includes(l)}]"
+                                @click="toggle(filters.levels, l)">{{l}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="s in scoreFilterList" :class="['chip', {active: filters.scores.includes(s.label)}]" @click="toggle(filters.scores, s.label)">{{s.label}}</div>
+                            <div v-for="s in scoreFilterList"
+                                :class="['chip', {active: filters.scores.includes(s.label)}]"
+                                @click="toggle(filters.scores, s.label)">{{s.label}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']" :class="['chip', {active: filters.lamps.includes(lp)}]" @click="toggle(filters.lamps, lp)">{{lp}}</div>
+                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
+                                :class="['chip', {active: filters.lamps.includes(lp)}]"
+                                @click="toggle(filters.lamps, lp)">{{lp}}</div>
                         </div>
                     </div>
-                    <div v-for="s in filteredMusic" :key="s.id" class="song-item" :style="{borderLeftColor: s.level==='ULTIMA' ? 'var(--ultima)' : (s.level==='MASTER' ? 'var(--master)' : '#333')}">
+                    <div v-for="s in filteredMusic" :key="s.id" class="song-item"
+                        :style="{borderLeftColor: s.level==='ULTIMA' ? 'var(--ultima)' : (s.level==='MASTER' ? 'var(--master)' : '#333')}">
                         <img :src="s.image">
                         <div class="song-info">
                             <span class="song-title">{{ s.title }}</span>
-                            <div style="font-size:10px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }} <span v-if="s.lamp" :class="['lamp-badge', s.lamp]">{{ s.lamp }}</span></div>
+                            <div style="font-size:10px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}
+                                <span v-if="s.lamp" :class="['lamp-badge', s.lamp]">{{ s.lamp }}</span>
+                            </div>
                         </div>
                         <div class="score-val">{{ s.score.toLocaleString() }}</div>
                         <div class="check-btn" @click="toggleAchievement(s)">✔</div>
@@ -143,7 +523,8 @@
 
                 <div v-else-if="tab === 'history'" key="history">
                     <h1 class="neon-title">達成済み ({{ achievedMusic.length }})</h1>
-                    <button @click="resetAchievements" style="width:100%; padding:12px; background:#444; border:none; border-radius:8px; color:#fff; margin-bottom:15px; font-size:12px; font-weight:bold;">履歴をリセット</button>
+                    <button @click="resetAchievements"
+                        style="width:100%; padding:12px; background:#444; border:none; border-radius:8px; color:#fff; margin-bottom:15px; font-size:12px; font-weight:bold;">履歴をリセット</button>
                     <div v-for="s in achievedMusic" :key="s.id" class="song-item" style="opacity:0.6;">
                         <img :src="s.image">
                         <div class="song-info">
@@ -159,27 +540,34 @@
                     <div class="glass-card">
                         <span class="section-label">ジャンル選択</span>
                         <div class="chip-group scroll-x">
-                            <div v-for="g in genres" :class="['chip', {active: target.genres.includes(g)}]" @click="toggle(target.genres, g)">{{g}}</div>
+                            <div v-for="g in genres" :class="['chip', {active: target.genres.includes(g)}]"
+                                @click="toggle(target.genres, g)">{{g}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="d in diffList" :class="['chip', {active: target.diffs.includes(d)}]" @click="toggle(target.diffs, d)">{{d}}</div>
+                            <div v-for="d in diffList" :class="['chip', {active: target.diffs.includes(d)}]"
+                                @click="toggle(target.diffs, d)">{{d}}</div>
                         </div>
                         <div class="chip-group scroll-x">
-                            <div v-for="l in levelList" :class="['chip', {active: target.levels.includes(l)}]" @click="toggle(target.levels, l)">{{l}}</div>
+                            <div v-for="l in levelList" :class="['chip', {active: target.levels.includes(l)}]"
+                                @click="toggle(target.levels, l)">{{l}}</div>
                         </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']" :class="['chip', {active: target.lamps.includes(lp)}]" @click="toggle(target.lamps, lp)">{{lp}}</div>
+                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
+                                :class="['chip', {active: target.lamps.includes(lp)}]"
+                                @click="toggle(target.lamps, lp)">{{lp}}</div>
                         </div>
 
                         <div style="margin:20px 0; display:flex; align-items:center; gap:20px;">
                             <span style="font-size:14px; font-weight:bold; color:var(--cyan);">抽選曲数:</span>
-                            <input type="number" v-model.number="drawCount" min="1" max="10" style="width:70px; text-align:center;" @change="saveToLocal">
+                            <input type="number" v-model.number="drawCount" min="1" max="10"
+                                style="width:70px; text-align:center;" @change="saveToLocal">
                         </div>
 
                         <button @click="drawLottery" class="btn-mission">ミッション開始</button>
                     </div>
 
-                    <div v-for="r in results" :key="r.id" class="song-item" :style="{borderLeftColor: r.level==='ULTIMA' ? 'var(--ultima)' : (r.level==='MASTER' ? 'var(--master)' : '#333')}">
+                    <div v-for="r in results" :key="r.id" class="song-item"
+                        :style="{borderLeftColor: r.level==='ULTIMA' ? 'var(--ultima)' : (r.level==='MASTER' ? 'var(--master)' : '#333')}">
                         <img :src="r.image">
                         <div class="song-info">
                             <span class="song-title">{{ r.title }}</span>
@@ -196,30 +584,100 @@
                 <div v-else-if="tab === 'chart'" key="chart">
                     <h1 class="neon-title">My定数表</h1>
 
-                    <div class="glass-card">
-                        <span class="section-label">表示条件 (スコア)</span>
+                    <div class="glass-card" style="padding: 10px;">
+                        <span class="section-label">マーク条件 (枠線強調)</span>
                         <div class="chip-group">
-                            <div v-for="c in chartOptions.displayList" :class="['chip', {active: chartSettings.display === c.value}]" @click="chartSettings.display = c.value">{{c.label}}</div>
+                            <div v-for="t in ['rank','lamp','score']"
+                                :class="['chip', {active: chartSettings.mark.type === t}]"
+                                @click="chartSettings.mark.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}</div>
+                        </div>
+                        <div v-if="chartSettings.mark.type === 'rank'" class="chip-group scroll-x">
+                            <div v-for="r in chartOptions.rankList"
+                                :class="['chip', {active: chartSettings.mark.value === r}]"
+                                @click="chartSettings.mark.value = r">{{r}}</div>
+                        </div>
+                        <div v-if="chartSettings.mark.type === 'lamp'" class="chip-group">
+                            <div v-for="l in chartOptions.lampList"
+                                :class="['chip', {active: chartSettings.mark.value === l}]"
+                                @click="chartSettings.mark.value = l">{{l}}</div>
+                        </div>
+                        <div v-if="chartSettings.mark.type === 'score'"><input type="number"
+                                v-model.number="chartSettings.specific.mark" class="score-input"></div>
+                        <div class="chip-group">
+                            <div :class="['chip', {active: chartSettings.mark.achieved === 'true'}]"
+                                @click="chartSettings.mark.achieved = 'true'">達成している</div>
+                            <div :class="['chip', {active: chartSettings.mark.achieved === 'false'}]"
+                                @click="chartSettings.mark.achieved = 'false'">していない</div>
                         </div>
 
-                        <span class="section-label">描画条件 (オーバーレイ)</span>
+                        <span class="section-label" style="margin-top:10px;">表示条件 (フィルタ)</span>
                         <div class="chip-group">
-                            <div v-for="r in chartOptions.renderList" :class="['chip', {active: chartSettings.render === r.value}]" @click="chartSettings.render = r.value">{{r.label}}</div>
+                            <div v-for="t in ['rank','lamp','score']"
+                                :class="['chip', {active: chartSettings.display.type === t}]"
+                                @click="chartSettings.display.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}
+                            </div>
+                        </div>
+                        <div v-if="chartSettings.display.type === 'rank'" class="chip-group scroll-x">
+                            <div v-for="r in chartOptions.rankList"
+                                :class="['chip', {active: chartSettings.display.value === r}]"
+                                @click="chartSettings.display.value = r">{{r}}</div>
+                        </div>
+                        <div v-if="chartSettings.display.type === 'lamp'" class="chip-group">
+                            <div v-for="l in chartOptions.lampList"
+                                :class="['chip', {active: chartSettings.display.value === l}]"
+                                @click="chartSettings.display.value = l">{{l}}</div>
+                        </div>
+                        <div v-if="chartSettings.display.type === 'score'"><input type="number"
+                                v-model.number="chartSettings.specific.display" class="score-input"></div>
+                        <div class="chip-group">
+                            <div :class="['chip', {active: chartSettings.display.achieved === 'true'}]"
+                                @click="chartSettings.display.achieved = 'true'">表示する</div>
+                            <div :class="['chip', {active: chartSettings.display.achieved === 'false'}]"
+                                @click="chartSettings.display.achieved = 'false'">表示しない</div>
+                        </div>
+
+                        <span class="section-label" style="margin-top:10px;">表示内容 (オーバーレイ)</span>
+                        <div class="chip-group">
+                            <div v-for="c in chartOptions.contentList"
+                                :class="['chip', {active: chartSettings.content.mode === c.value}]"
+                                @click="chartSettings.content.mode = c.value">{{c.label}}</div>
+                        </div>
+                        <div v-if="chartSettings.content.mode === 'base'" class="chip-group scroll-x">
+                            <div v-for="r in chartOptions.rankList"
+                                :class="['chip', {active: chartSettings.content.baseRank === r}]"
+                                @click="chartSettings.content.baseRank = r">{{r}}基準</div>
                         </div>
                     </div>
 
-                    <div>
-                        <div v-for="group in groupedByConst" :key="group.constVal" style="margin-bottom:25px;">
-                            <div style="color:var(--cyan); border-bottom:1px solid rgba(0,229,255,0.3); margin-bottom:12px; font-weight:900; font-size:18px; padding-bottom:5px; display:flex; align-items:baseline; gap:10px; text-shadow: 0 0 10px rgba(0,229,255,0.5);">
-                                <span>{{ group.constVal }}</span>
-                                <span style="font-size:10px; color:#666; font-weight:normal;">({{ group.songs.length }})</span>
-                            </div>
-                            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap:8px;">
-                                <div v-for="s in group.songs" :key="s.id" style="position:relative; background:#111; border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
-                                    <img :src="s.image" style="width:100%; aspect-ratio:1/1; display:block; object-fit:cover;">
+                    <div style="padding-bottom:100px;">
+                        <div v-for="group in groupedByConst" :key="group.constVal"
+                            style="margin-bottom:15px; content-visibility: auto; contain-intrinsic-size: 1px 200px;">
 
-                                    <div v-if="chartSettings.render === 'score'" style="position:absolute; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.85); color:var(--cyan); font-size:8px; text-align:center; padding:2px 0; font-family:monospace; border-top:1px solid rgba(0,229,255,0.3); letter-spacing:-0.2px;">
-                                        {{ s.score.toLocaleString() }}
+                            <div class="const-header">
+                                {{ group.constVal }} <span style="font-size:9px; color:#444;">({{ group.songs.length
+                                    }})</span>
+                            </div>
+
+                            <div class="chart-grid">
+                                <div v-for="s in group.songs" :key="s.id" class="chart-item" :style="{
+                                        border: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '1.5px solid var(--cyan)' : 'none',
+                                        boxShadow: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '0 0 8px var(--cyan)' : 'none'
+                                     }">
+                                    <img :src="s.image" class="chart-img" loading="lazy" decoding="async">
+
+                                    <div class="chart-overlay">
+                                        <div v-if="chartSettings.content.mode === 'rank' || chartSettings.content.mode === 'both'"
+                                            class="overlay-text bold">{{ getRank(s.score) }}</div>
+                                        <div v-if="chartSettings.content.mode === 'lamp'" class="overlay-text small">{{
+                                            s.lamp }}</div>
+                                        <div v-if="chartSettings.content.mode === 'score' || chartSettings.content.mode === 'both'"
+                                            class="overlay-text">{{ s.score.toLocaleString() }}</div>
+                                        <div v-if="chartSettings.content.mode === 'base'" class="overlay-text"
+                                            :style="{color: (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ? '#00ff00' : '#ff5555'}">
+                                            {{ (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ? '+' :
+                                            '' }}{{ (s.score -
+                                            getRankThreshold(chartSettings.content.baseRank)).toLocaleString() }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -249,25 +707,27 @@
                     musicData: [], achievements: {},
                     isSyncing: false, syncStatus: '', syncProgress: 0, syncLogs: [],
                     diffList: ['ULTIMA', 'MASTER', 'EXPERT', 'ADVANCED', 'BASIC'],
-                    levelList: ['15+','15','14+','14','13+','13','12+','12','11+','11','10+','10','9+','9','8+','8','7+','7','6','5','4','3','2','1'],
+                    levelList: ['15+', '15', '14+', '14', '13+', '13', '12+', '12', '11+', '11', '10+', '10', '9+', '9', '8+', '8', '7+', '7', '6', '5', '4', '3', '2', '1'],
                     scoreFilterList: [{ label: 'SS未満', min: 0, max: 999999 }, { label: 'SS', min: 1000000, max: 1004999 }, { label: 'SS+', min: 1005000, max: 1007499 }, { label: 'SSS', min: 1007500, max: 1008999 }, { label: 'SSS+', min: 1009000, max: 1010000 }],
-                    settings: { syncDiffs: ['MASTER', 'ULTIMA'], syncLevels: ['14','14+','15','15+'], syncLamps: ['AJC','AJ','FC','CLEAR'], syncScores: [] },
-                    filters: { diffs: ['MASTER', 'ULTIMA'], levels: [], scores: [], lamps: ['AJC','AJ','FC','CLEAR'] },
-                    target: { diffs: ['MASTER', 'ULTIMA'], levels: ['14','14+','15','15+'], genres: [], lamps: ['AJC','AJ','FC','CLEAR'] },
+                    settings: { syncDiffs: ['MASTER', 'ULTIMA'], syncLevels: ['14', '14+', '15', '15+'], syncLamps: ['AJC', 'AJ', 'FC', 'CLEAR'], syncScores: [] },
+                    filters: { diffs: ['MASTER', 'ULTIMA'], levels: [], scores: [], lamps: ['AJC', 'AJ', 'FC', 'CLEAR'] },
+                    target: { diffs: ['MASTER', 'ULTIMA'], levels: ['14', '14+', '15', '15+'], genres: [], lamps: ['AJC', 'AJ', 'FC', 'CLEAR'] },
                     drawCount: 1, results: [], musicMaster: [],
-                    chartSettings: { display: 'all', render: 'none' },
+                    chartSettings: {
+                        display: { type: 'rank', value: 'D', achieved: 'true' },
+                        mark: { type: 'rank', value: 'SSS', achieved: 'true' },
+                        content: { mode: 'rank', baseRank: 'SSS' },
+                        specific: { display: 1009900, mark: 1009900 }
+                    },
                     chartOptions: {
-                        displayList: [
-                            { label: '全部', value: 'all' },
-                            { label: '理論値', value: 'ajc' },
-                            { label: 'SSS+', value: 'sss_p' },
-                            { label: 'SSS', value: 'sss' },
-                            { label: 'SS+', value: 'ss_p' },
-                            { label: 'SS', value: 'ss' }
-                        ],
-                        renderList: [
-                            { label: 'なし', value: 'none' },
-                            { label: 'スコア', value: 'score' }
+                        rankList: ['SSS+', 'SSS', 'SS+', 'SS', 'S', 'AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'C', 'D'],
+                        lampList: ['AJC', 'AJ', 'FC', 'CLEAR'],
+                        contentList: [
+                            { label: 'ランク', value: 'rank' },
+                            { label: 'ランプ', value: 'lamp' },
+                            { label: 'スコア', value: 'score' },
+                            { label: '両方', value: 'both' },
+                            { label: '基準点差', value: 'base' }
                         ]
                     }
                 }
@@ -283,8 +743,8 @@
                         const req = indexedDB.open("ChuniDB", 1);
                         req.onupgradeneeded = e => {
                             const db = e.target.result;
-                            if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", { keyPath: "id" });
-                            if(!db.objectStoreNames.contains("achievements")) db.createObjectStore("achievements", { keyPath: "id" });
+                            if (!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", { keyPath: "id" });
+                            if (!db.objectStoreNames.contains("achievements")) db.createObjectStore("achievements", { keyPath: "id" });
                         };
                         req.onsuccess = e => { this.db = e.target.result; res(); };
                     });
@@ -308,7 +768,7 @@
                         const songs = consts.flatMap(c => {
                             const m = master.find(sm => sm.title === c.title) || {};
                             return c.difficulties.filter(d => {
-                                const lv = m[`lev_${d.level.toLowerCase().substring(0,3)}`] || '??';
+                                const lv = m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??';
                                 const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
                                 const sc = sData ? sData.score : 0;
                                 let lp = sData ? sData.lamp : 'CLEAR';
@@ -323,7 +783,7 @@
                                 let lp = sData ? sData.lamp : 'CLEAR';
                                 if (sc >= 1010000) lp = 'AJC';
 
-                                return { id: `${c.title}_${d.level}`, title: c.title, image: c.imageUrl, level: d.level, const: d.const, score: sc, lamp: lp, levelStr: m[`lev_${d.level.toLowerCase().substring(0,3)}`] || '??', genre: m.catname || '未分類' };
+                                return { id: `${c.title}_${d.level}`, title: c.title, image: c.imageUrl, level: d.level, const: d.const, score: sc, lamp: lp, levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??', genre: m.catname || '未分類' };
                             });
                         });
 
@@ -399,6 +859,41 @@
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 },
+                getRankThreshold(rank) {
+                    const thresholds = {
+                        'SSS+': 1009000, 'SSS': 1007500, 'SS+': 1005000, 'SS': 1000000,
+                        'S': 975000, 'AAA': 950000, 'AA': 925000, 'A': 900000,
+                        'BBB': 800000, 'BB': 700000, 'B': 600000, 'C': 500000, 'D': 0
+                    };
+                    return thresholds[rank] !== undefined ? thresholds[rank] : 0;
+                },
+                getRank(score) {
+                    if (score >= 1009000) return 'SSS+';
+                    if (score >= 1007500) return 'SSS';
+                    if (score >= 1005000) return 'SS+';
+                    if (score >= 1000000) return 'SS';
+                    if (score >= 975000) return 'S';
+                    if (score >= 950000) return 'AAA';
+                    if (score >= 925000) return 'AA';
+                    if (score >= 900000) return 'A';
+                    return 'D';
+                },
+                // フィルタ・マークの条件判定ロジック (修正版)
+                checkCondition(song, config, specificScore) {
+                    let success = false;
+                    const score = parseInt(song.score) || 0;
+
+                    if (config.type === 'rank') {
+                        success = score >= this.getRankThreshold(config.value);
+                    } else if (config.type === 'lamp') {
+                        const lampMap = { 'AJC': 4, 'AJ': 3, 'FC': 2, 'CLEAR': 1 };
+                        success = lampMap[song.lamp] >= lampMap[config.value];
+                    } else if (config.type === 'score') {
+                        success = score >= (parseInt(specificScore) || 0);
+                    }
+
+                    return config.achieved === 'true' ? success : !success;
+                }
             },
             computed: {
                 remainingMusic() { return this.musicData.filter(s => !this.achievements[s.id]); },
@@ -410,29 +905,22 @@
                         const lpM = this.filters.lamps.includes(s.lamp);
                         const sM = this.filters.scores.length === 0 || this.filters.scores.some(label => { const r = this.scoreFilterList.find(f => f.label === label); return s.score >= r.min && s.score <= r.max; });
                         return dM && lM && sM && lpM;
-                    }).sort((a,b) => b.score - a.score);
+                    }).sort((a, b) => b.score - a.score);
                 },
                 genres() { return [...new Set(this.musicMaster.map(m => m.catname))].filter(g => g); },
                 groupedByConst() {
-                    const filtered = this.musicData.filter(s => {
-                        if (this.chartSettings.display === 'all') return true;
-                        if (this.chartSettings.display === 'ajc') return s.score >= 1010000;
-                        if (this.chartSettings.display === 'sss_p') return s.score >= 1009000;
-                        if (this.chartSettings.display === 'sss') return s.score >= 1007500;
-                        if (this.chartSettings.display === 'ss_p') return s.score >= 1005000;
-                        if (this.chartSettings.display === 'ss') return s.score >= 1000000;
-                        return false;
-                    });
+                    // 表示条件に基づいてフィルタリング
+                    const filtered = this.musicData.filter(s =>
+                        this.checkCondition(s, this.chartSettings.display, this.chartSettings.specific.display)
+                    );
 
                     const groups = {};
                     filtered.forEach(s => {
-                        // 小数点第1位で固定してグループ化 (例: "14.7")
                         const val = parseFloat(s.const).toFixed(1);
                         if (!groups[val]) groups[val] = [];
                         groups[val].push(s);
                     });
 
-                    // 定数の数値で降順ソートした配列を返す
                     return Object.keys(groups)
                         .sort((a, b) => parseFloat(b) - parseFloat(a))
                         .map(key => ({
@@ -444,4 +932,5 @@
         }).mount('#app');
     </script>
 </body>
+
 </html>

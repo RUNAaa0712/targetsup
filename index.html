@@ -14,7 +14,6 @@
         body { background: var(--bg); color: #fff; margin: 0; font-family: 'Avenir', 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', sans-serif; overflow: hidden; }
         .cyber-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-image: linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.05) 1px, transparent 1px); background-size: 35px 35px; z-index: -1; }
 
-        /* アニメーション */
         .page-fade-enter-active, .page-fade-leave-active { transition: all 0.4s ease; }
         .page-fade-enter-from { opacity: 0; transform: translateX(30px); }
         .page-fade-leave-to { opacity: 0; transform: translateX(-30px); }
@@ -25,29 +24,27 @@
         .neon-title { font-size: 20px; font-weight: 900; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); margin-bottom: 20px; border-left: 5px solid var(--cyan); padding-left: 10px; letter-spacing: 1px; }
         .glass-card { background: var(--glass); border: 1px solid rgba(0,229,255,0.25); border-radius: 12px; padding: 18px; margin-bottom: 15px; backdrop-filter: blur(10px); }
 
-        input, select { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #fff; padding: 10px; outline: none; font-size: 16px; width: 100%; box-sizing: border-box; }
+        input, select { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #fff; padding: 12px; outline: none; font-size: 16px; width: 100%; box-sizing: border-box; }
         .btn-action { background: var(--cyan); color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 5px; }
 
         .section-label { font-size: 10px; color: #777; margin: 12px 0 6px; display: block; font-weight: bold; text-transform: uppercase; }
         .chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 5px; }
         .chip-group.scroll-x { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; scrollbar-width: none; }
-        .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #333; font-size: 11px; cursor: pointer; color: #666; transition: 0.2s; font-weight: bold; white-space: nowrap; }
+        .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #444; font-size: 11px; cursor: pointer; color: #666; transition: 0.2s; font-weight: bold; white-space: nowrap; }
         .chip.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.15); box-shadow: 0 0 8px rgba(0,229,255,0.2); }
 
-        /* 同期用オーバーレイ */
         .sync-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,8,12,0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .sync-panel { border: 1px solid var(--cyan); padding: 30px; background: #05080c; border-radius: 15px; box-shadow: 0 0 30px rgba(0,229,255,0.3); width: 300px; text-align: center; }
+        .sync-panel { border: 1px solid var(--cyan); padding: 30px; background: #05080c; border-radius: 15px; width: 300px; text-align: center; }
         .progress-container { width: 100%; height: 6px; background: #1a232e; border-radius: 3px; overflow: hidden; margin: 15px 0; }
         .progress-fill { height: 100%; background: var(--cyan); transition: width 0.3s; }
         .sync-log { font-size: 10px; color: #666; text-align: left; height: 80px; overflow-y: auto; border-top: 1px solid #222; padding-top: 10px; line-height: 1.5; scrollbar-width: none; }
 
-        /* 楽曲カード */
         .song-item { display: flex; align-items: center; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 5px solid #333; }
         .song-item img { width: 48px; height: 48px; border-radius: 4px; margin-right: 12px; }
         .song-info { flex: 1; min-width: 0; }
         .song-title { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .lamp-badge { font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-left: 5px; font-weight: bold; }
-        .lamp-badge.AJC { background: var(--ajc); color: #000; }
+        .lamp-badge.AJC { background: var(--ajc); color: #000; box-shadow: 0 0 8px var(--ajc); }
         .lamp-badge.AJ { background: var(--aj); color: #000; }
         .lamp-badge.FC { background: var(--fc); color: #fff; }
         .score-val { font-family: 'Courier New', monospace; color: var(--cyan); font-weight: bold; font-size: 15px; }
@@ -182,11 +179,50 @@
                         <button @click="drawLottery" class="btn-mission">ミッション開始</button>
                     </div>
 
-                    <div v-for="r in results" :key="r.id" class="song-item">
+                    <div v-for="r in results" :key="r.id" class="song-item" :style="{borderLeftColor: r.level==='ULTIMA' ? 'var(--ultima)' : (r.level==='MASTER' ? 'var(--master)' : '#333')}">
                         <img :src="r.image">
                         <div class="song-info">
-                            <div class="song-title">{{ r.title }}</div>
-                            <div style="font-size:10px; color:#888;">{{ r.genre }} | {{ r.level }} {{ r.levelStr }}</div>
+                            <span class="song-title">{{ r.title }}</span>
+                            <div style="font-size:10px; color:#888;">
+                                {{ r.level }} {{ r.levelStr }} | C: {{ r.const }}
+                                <span v-if="r.lamp" :class="['lamp-badge', r.lamp]">{{ r.lamp }}</span>
+                            </div>
+                            <div style="font-size:9px; color:#666; margin-top:2px;">{{ r.genre }}</div>
+                        </div>
+                        <div class="score-val">{{ r.score.toLocaleString() }}</div>
+                    </div>
+                </div>
+
+                <div v-else-if="tab === 'chart'" key="chart">
+                    <h1 class="neon-title">My定数表</h1>
+
+                    <div class="glass-card">
+                        <span class="section-label">表示条件 (スコア)</span>
+                        <div class="chip-group">
+                            <div v-for="c in chartOptions.displayList" :class="['chip', {active: chartSettings.display === c.value}]" @click="chartSettings.display = c.value">{{c.label}}</div>
+                        </div>
+
+                        <span class="section-label">描画条件 (オーバーレイ)</span>
+                        <div class="chip-group">
+                            <div v-for="r in chartOptions.renderList" :class="['chip', {active: chartSettings.render === r.value}]" @click="chartSettings.render = r.value">{{r.label}}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div v-for="group in groupedByConst" :key="group.constVal" style="margin-bottom:25px;">
+                            <div style="color:var(--cyan); border-bottom:1px solid rgba(0,229,255,0.3); margin-bottom:12px; font-weight:900; font-size:18px; padding-bottom:5px; display:flex; align-items:baseline; gap:10px; text-shadow: 0 0 10px rgba(0,229,255,0.5);">
+                                <span>{{ group.constVal }}</span>
+                                <span style="font-size:10px; color:#666; font-weight:normal;">({{ group.songs.length }})</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap:8px;">
+                                <div v-for="s in group.songs" :key="s.id" style="position:relative; background:#111; border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+                                    <img :src="s.image" style="width:100%; aspect-ratio:1/1; display:block; object-fit:cover;">
+
+                                    <div v-if="chartSettings.render === 'score'" style="position:absolute; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.85); color:var(--cyan); font-size:8px; text-align:center; padding:2px 0; font-family:monospace; border-top:1px solid rgba(0,229,255,0.3); letter-spacing:-0.2px;">
+                                        {{ s.score.toLocaleString() }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -198,6 +234,7 @@
             <div class="nav-item" :class="{active: tab === 'data'}" @click="tab = 'data'"><span>DB</span></div>
             <div class="nav-item" :class="{active: tab === 'history'}" @click="tab = 'history'"><span>達成</span></div>
             <div class="nav-item" :class="{active: tab === 'target'}" @click="tab = 'target'"><span>抽選</span></div>
+            <div class="nav-item" :class="{active: tab === 'chart'}" @click="tab = 'chart'"><span>定数表</span></div>
         </nav>
     </div>
 
@@ -217,8 +254,22 @@
                     settings: { syncDiffs: ['MASTER', 'ULTIMA'], syncLevels: ['14','14+','15','15+'], syncLamps: ['AJC','AJ','FC','CLEAR'], syncScores: [] },
                     filters: { diffs: ['MASTER', 'ULTIMA'], levels: [], scores: [], lamps: ['AJC','AJ','FC','CLEAR'] },
                     target: { diffs: ['MASTER', 'ULTIMA'], levels: ['14','14+','15','15+'], genres: [], lamps: ['AJC','AJ','FC','CLEAR'] },
-                    drawCount: 1, // 抽選数
-                    results: [], musicMaster: []
+                    drawCount: 1, results: [], musicMaster: [],
+                    chartSettings: { display: 'all', render: 'none' },
+                    chartOptions: {
+                        displayList: [
+                            { label: '全部', value: 'all' },
+                            { label: '理論値', value: 'ajc' },
+                            { label: 'SSS+', value: 'sss_p' },
+                            { label: 'SSS', value: 'sss' },
+                            { label: 'SS+', value: 'ss_p' },
+                            { label: 'SS', value: 'ss' }
+                        ],
+                        renderList: [
+                            { label: 'なし', value: 'none' },
+                            { label: 'スコア', value: 'score' }
+                        ]
+                    }
                 }
             },
             async mounted() {
@@ -260,11 +311,19 @@
                                 const lv = m[`lev_${d.level.toLowerCase().substring(0,3)}`] || '??';
                                 const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
                                 const sc = sData ? sData.score : 0;
-                                const lp = sData ? sData.lamp : 'CLEAR';
+                                let lp = sData ? sData.lamp : 'CLEAR';
+
+                                /* 【重要】スコアが1010000ならAJCランプを強制適用 */
+                                if (sc >= 1010000) lp = 'AJC';
+
                                 return this.settings.syncDiffs.includes(d.level) && (this.settings.syncLevels.length === 0 || this.settings.syncLevels.includes(lv)) && this.settings.syncLamps.includes(lp) && (this.settings.syncScores.length === 0 || this.settings.syncScores.some(label => { const r = this.scoreFilterList.find(f => f.label === label); return sc >= r.min && sc <= r.max; }));
                             }).map(d => {
                                 const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
-                                return { id: `${c.title}_${d.level}`, title: c.title, image: c.imageUrl, level: d.level, const: d.const, score: sData ? sData.score : 0, lamp: sData ? sData.lamp : 'CLEAR', levelStr: m[`lev_${d.level.toLowerCase().substring(0,3)}`] || '??', genre: m.catname || '未分類' };
+                                const sc = sData ? sData.score : 0;
+                                let lp = sData ? sData.lamp : 'CLEAR';
+                                if (sc >= 1010000) lp = 'AJC';
+
+                                return { id: `${c.title}_${d.level}`, title: c.title, image: c.imageUrl, level: d.level, const: d.const, score: sc, lamp: lp, levelStr: m[`lev_${d.level.toLowerCase().substring(0,3)}`] || '??', genre: m.catname || '未分類' };
                             });
                         });
 
@@ -302,7 +361,6 @@
                     }));
                 },
                 async handleAuth(action) {
-                    if(!this.auth.userId || !this.auth.password) return alert("IDとパスワードを入力してください");
                     const res = await fetch(`${API_URL}?action=${action}`, { method: 'POST', body: JSON.stringify({ ...this.auth }) }).then(r => r.json());
                     if (res.status === 'success') { if (action === 'login') { this.isLoggedIn = true; localStorage.setItem('chuni_auth', JSON.stringify(this.auth)); await this.loadAndSync(); } else alert("登録完了"); } else alert(res.message);
                 },
@@ -323,10 +381,24 @@
                 drawLottery() {
                     const pool = this.remainingMusic.filter(s => (this.target.genres.length === 0 || this.target.genres.includes(s.genre)) && this.target.diffs.includes(s.level) && this.target.levels.includes(s.levelStr) && this.target.lamps.includes(s.lamp));
                     if (!pool.length) return alert("該当なし");
-
-                    // シャッフルして指定曲数分を抽出
                     this.results = [...pool].sort(() => 0.5 - Math.random()).slice(0, this.drawCount);
-                }
+                },
+                async exportChartImage() {
+                    const element = document.getElementById('capture-area');
+                    if (!element) return;
+
+                    // html2canvasを実行
+                    const canvas = await html2canvas(element, {
+                        useCORS: true,
+                        backgroundColor: '#05080c',
+                        scale: 2 // 高画質
+                    });
+
+                    const link = document.createElement('a');
+                    link.download = `my_chunithm_chart_${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                },
             },
             computed: {
                 remainingMusic() { return this.musicData.filter(s => !this.achievements[s.id]); },
@@ -340,7 +412,34 @@
                         return dM && lM && sM && lpM;
                     }).sort((a,b) => b.score - a.score);
                 },
-                genres() { return [...new Set(this.musicMaster.map(m => m.catname))].filter(g => g); }
+                genres() { return [...new Set(this.musicMaster.map(m => m.catname))].filter(g => g); },
+                groupedByConst() {
+                    const filtered = this.musicData.filter(s => {
+                        if (this.chartSettings.display === 'all') return true;
+                        if (this.chartSettings.display === 'ajc') return s.score >= 1010000;
+                        if (this.chartSettings.display === 'sss_p') return s.score >= 1009000;
+                        if (this.chartSettings.display === 'sss') return s.score >= 1007500;
+                        if (this.chartSettings.display === 'ss_p') return s.score >= 1005000;
+                        if (this.chartSettings.display === 'ss') return s.score >= 1000000;
+                        return false;
+                    });
+
+                    const groups = {};
+                    filtered.forEach(s => {
+                        // 小数点第1位で固定してグループ化 (例: "14.7")
+                        const val = parseFloat(s.const).toFixed(1);
+                        if (!groups[val]) groups[val] = [];
+                        groups[val].push(s);
+                    });
+
+                    // 定数の数値で降順ソートした配列を返す
+                    return Object.keys(groups)
+                        .sort((a, b) => parseFloat(b) - parseFloat(a))
+                        .map(key => ({
+                            constVal: key,
+                            songs: groups[key].sort((a, b) => b.score - a.score)
+                        }));
+                },
             }
         }).mount('#app');
     </script>

@@ -416,10 +416,92 @@
             border-radius: 4px;
         }
 
-        const-group {
-            content-visibility: auto;
-            contain-intrinsic-size: 100px 500px;
-            /* 推定のサイズを伝えてガタつきを抑える */
+        /* --- 追加: ジャケット回転スロット演出用 --- */
+        .slot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 8, 12, 0.98);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            max-width: 90%;
+            perspective: 800px;
+        }
+
+        .slot-machine {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+            transition: transform 0.2s;
+        }
+
+        /* 決定時に光る演出 */
+        .slot-machine.locked {
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan);
+            transform: scale(1.1);
+        }
+
+        .slot-reel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 高速回転アニメーション */
+        .spinning .slot-reel {
+            animation: reelBlur 0.1s infinite linear;
+        }
+
+        @keyframes reelBlur {
+            0% {
+                transform: translateY(-10%) scale(0.9);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: translateY(10%) scale(0.9);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: translateY(-10%) scale(0.9);
+                opacity: 0.7;
+            }
+        }
+
+        .slot-status {
+            margin-top: 30px;
+            color: var(--cyan);
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -439,6 +521,21 @@
                     <div v-for="(log, i) in syncLogs" :key="i">> {{ log }}</div>
                 </div>
             </div>
+        </div>
+
+        <div v-if="isAnimating" class="slot-overlay">
+            <h2 class="neon-title" style="margin-bottom:30px; border:none; text-align:center;">LOTTERY SEQUENCE</h2>
+
+            <div class="slot-container">
+                <div v-for="(slot, i) in slots" :key="i"
+                    :class="['slot-machine', {locked: !slot.isSpinning, spinning: slot.isSpinning}]">
+                    <div class="slot-reel">
+                        <img :src="slot.currentImage" class="slot-img">
+                    </div>
+                </div>
+            </div>
+
+            <div class="slot-status">{{ animationStatusText }}</div>
         </div>
 
         <main>
@@ -563,6 +660,12 @@
                                 style="width:70px; text-align:center;" @change="saveToLocal">
                         </div>
 
+                        <div
+                            style="margin-bottom: 20px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <input type="checkbox" id="animToggle" v-model="enableAnimation" style="width:auto;">
+                            <label for="animToggle"
+                                style="color:#aaa; font-size:12px; cursor:pointer;">スロット演出を有効にする</label>
+                        </div>
                         <button @click="drawLottery" class="btn-mission">ミッション開始</button>
                     </div>
 
@@ -729,7 +832,11 @@
                             { label: '両方', value: 'both' },
                             { label: '基準点差', value: 'base' }
                         ]
-                    }
+                    },
+                    enableAnimation: false, // 演出ON/OFF
+                    isAnimating: false,     // 演出中フラグ
+                    slots: [],              // スロットごとの状態管理
+                    animationStatusText: '', // 演出中のテキスト
                 }
             },
             async mounted() {
@@ -838,10 +945,67 @@
                 },
                 toggle(arr, val) { const i = arr.indexOf(val); i > -1 ? arr.splice(i, 1) : arr.push(val); this.saveToLocal(); },
                 async resetAchievements() { if (confirm("履歴をリセット？")) { await this.db.transaction("achievements", "readwrite").objectStore("achievements").clear(); this.achievements = {}; } },
-                drawLottery() {
-                    const pool = this.remainingMusic.filter(s => (this.target.genres.length === 0 || this.target.genres.includes(s.genre)) && this.target.diffs.includes(s.level) && this.target.levels.includes(s.levelStr) && this.target.lamps.includes(s.lamp));
-                    if (!pool.length) return alert("該当なし");
-                    this.results = [...pool].sort(() => 0.5 - Math.random()).slice(0, this.drawCount);
+                async drawLottery() {
+                    // 1. 候補曲を抽出
+                    const pool = this.remainingMusic.filter(s =>
+                        (this.target.genres.length === 0 || this.target.genres.includes(s.genre)) &&
+                        this.target.diffs.includes(s.level) &&
+                        this.target.levels.includes(s.levelStr) &&
+                        this.target.lamps.includes(s.lamp)
+                    );
+
+                    if (!pool.length) return alert("条件に一致する曲がありません");
+
+                    // 2. 抽選実行（結果を先に決める）
+                    const finalResults = [...pool].sort(() => 0.5 - Math.random()).slice(0, this.drawCount);
+
+                    // 3. 演出OFFなら即表示して終了
+                    if (!this.enableAnimation) {
+                        this.results = finalResults;
+                        return;
+                    }
+
+                    // --- 以下、演出ON時の処理 ---
+                    this.isAnimating = true;
+                    this.results = []; // リスト表示はクリア
+                    this.animationStatusText = "SEARCHING...";
+
+                    // スロットの初期化（最初はランダムな画像で開始）
+                    this.slots = finalResults.map(targetSong => ({
+                        isSpinning: true,
+                        currentImage: pool[Math.floor(Math.random() * pool.length)].image,
+                        target: targetSong
+                    }));
+
+                    // 画像をパラパラ切り替えるタイマーを開始
+                    const timers = this.slots.map((slot, index) => {
+                        return setInterval(() => {
+                            // 候補曲の中からランダムに画像を表示
+                            slot.currentImage = pool[Math.floor(Math.random() * pool.length)].image;
+                        }, 50); // 0.05秒ごとに切り替え
+                    });
+
+                    // 順番に停止させる処理
+                    for (let i = 0; i < this.slots.length; i++) {
+                        // 少しずつ停止タイミングをずらす（最初の1個は1秒後、次は0.8秒後...など）
+                        await new Promise(r => setTimeout(r, 200 + (i * 100)));
+
+                        // タイマーを止めて、本来の当選画像のセット
+                        clearInterval(timers[i]);
+                        this.slots[i].currentImage = this.slots[i].target.image;
+                        this.slots[i].isSpinning = false; // 回転フラグOFF（枠が光る）
+
+                        // 効果音的なテキスト変更
+                        this.animationStatusText = `LOCKED [${i + 1}/${this.slots.length}]`;
+                    }
+
+                    // 全部止まった後の完了処理
+                    this.animationStatusText = "COMPLETE!";
+                    await new Promise(r => setTimeout(r, 1000)); // 1秒余韻を表示
+
+                    // 演出終了、結果リストを表示
+                    this.results = finalResults;
+                    this.isAnimating = false;
                 },
                 async exportChartImage() {
                     const element = document.getElementById('capture-area');

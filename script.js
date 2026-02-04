@@ -44,6 +44,14 @@ createApp({
         if (this.isLoggedIn) await this.loadFromIndexedDB();
     },
     methods: {
+        filterPoseExclusions(songs) {
+            // ULTIMAがある曲のタイトルをセット化
+            const ultimaTitles = new Set(
+                songs.filter(s => s.level === 'ULTIMA').map(s => s.title)
+            );
+            // MASTER かつ ULTIMAが存在する場合は除外
+            return songs.filter(s => !(s.level === 'MASTER' && ultimaTitles.has(s.title)));
+        },
         async initDB() {
             return new Promise(res => {
                 const req = indexedDB.open("ChuniDB", 1);
@@ -94,7 +102,19 @@ createApp({
                         let lp = sData ? sData.lamp : 'CLEAR';
                         if (sc >= 1010000) lp = 'AJC';
 
-                        return { id: `${c.title}_${d.level}`, title: c.title, image: c.imageUrl, level: d.level, const: d.const, score: sc, lamp: lp, levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??', genre: m.catname || '未分類' };
+                        const genre = (sData && sData.genre) ? sData.genre : (m.catname || '未分類');
+
+                        return {
+                            id: `${c.title}_${d.level}`,
+                            title: c.title,
+                            image: c.imageUrl,
+                            level: d.level,
+                            const: d.const,
+                            score: sc,
+                            lamp: lp,
+                            levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??',
+                            genre: genre
+                        };
                     });
                 });
 
@@ -151,16 +171,20 @@ createApp({
         async resetAchievements() { if (confirm("履歴をリセット？")) { await this.db.transaction("achievements", "readwrite").objectStore("achievements").clear(); this.achievements = {}; } },
         async drawLottery() {
             // 1. 候補曲を抽出
-            const pool = this.remainingMusic.filter(s =>
+            let pool = this.remainingMusic.filter(s =>
                 (this.target.genres.length === 0 || this.target.genres.includes(s.genre)) &&
                 this.target.diffs.includes(s.level) &&
                 this.target.levels.includes(s.levelStr) &&
                 this.target.lamps.includes(s.lamp)
             );
 
+            // 2. 「ポゼ対象外」設定がONなら、ULTIMAがある曲のMASTERを除外
+            if (this.settings.excludeMasterIfUltima) {
+                pool = this.filterPoseExclusions(pool);
+            }
+
             if (!pool.length) return alert("条件に一致する曲がありません");
 
-            // 2. 抽選実行（結果を先に決める）
             const finalResults = [...pool].sort(() => 0.5 - Math.random()).slice(0, this.drawCount);
 
             // 3. 演出OFFなら即表示して終了

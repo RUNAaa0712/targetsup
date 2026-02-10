@@ -359,7 +359,7 @@ createApp({
                 const dataUrl = canvas.toDataURL("image/png");
 
                 // 5. 新しいタブで開く
-                const newTab = window.open();
+                const newTab = window.open('', '_blank');
                 if (newTab) {
                     newTab.document.write(`
                         <html>

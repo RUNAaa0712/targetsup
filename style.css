@@ -782,3 +782,73 @@ select {
     padding: 15px;
     /* 少し詰める */
 }
+
+/* モーダル外枠：画面いっぱいに広がる */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    /* 中央配置 */
+    justify-content: center;
+    padding: 10px;
+    /* スマホ用に余白を詰め */
+    box-sizing: border-box;
+}
+
+/* モーダル本体：高さを最大90%に制限 */
+.modal-content {
+    background: var(--glass);
+    border: 1px solid var(--cyan);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    /* ★画面の高さの90%を上限にする */
+    display: flex;
+    flex-direction: column;
+    /* ★中身を縦に並べる */
+    overflow: hidden;
+    /* ★はみ出しを隠す */
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+}
+
+/* ヘッダーは固定 */
+.modal-header {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+/* ★画像表示エリア：ここだけをスクロール可能にする */
+.modal-body {
+    flex: 1;
+    /* 残りの高さをすべて使う */
+    overflow-y: auto;
+    /* ★縦スクロールを有効に */
+    padding: 10px;
+    -webkit-overflow-scrolling: touch;
+    /* iOSでのスクロールを滑らかに */
+}
+
+.result-img-preview {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.modal-tip {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin: 10px 0;
+}

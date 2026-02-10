@@ -308,7 +308,9 @@
 
                 <div v-else-if="tab === 'rating'" key="rating" class="rating-page">
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn-action" @click="generateRatingImage" style="flex: 1;">画像を保存（別タブで開く）</button>
+                        <button class="btn-action" @click="generateRatingImage">
+                            画像を生成して保存
+                        </button>
                     </div>
 
                     <div id="rating-full-capture" class="capture-container">
@@ -360,6 +362,21 @@
                 </div>
             </transition>
         </main>
+
+        <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span style="color:var(--cyan); font-weight:bold;">GENERATED ANALYSIS</span>
+                    <button class="modal-close-x" @click="showModal = false">×</button>
+                </div>
+                <div class="modal-body">
+                    <img :src="generatedImage" class="result-img-preview">
+                    <p class="modal-tip">※画像を長押しして保存してください</p>
+                </div>
+                <button @click="showModal = false" class="btn-action"
+                    style="margin-top:10px; background:#333; color:#fff;">閉じる</button>
+            </div>
+        </div>
 
         <nav class="nav-bar">
             <div class="nav-item" :class="{active: tab === 'home'}" @click="tab = 'home'">

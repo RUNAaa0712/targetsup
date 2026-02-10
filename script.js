@@ -37,6 +37,8 @@ createApp({
             isAnimating: false,     // 演出中フラグ
             slots: [],              // スロットごとの状態管理
             animationStatusText: '', // 演出中のテキスト
+            showModal: false,      // モーダル表示フラグ
+            generatedImage: '',    // 生成された画像のURL
         }
     },
     async mounted() {
@@ -335,44 +337,33 @@ createApp({
             return Math.max(0, rating);
         },
         async generateRatingImage() {
-            // 1. キャプチャ対象の要素を取得
+            // キャプチャ対象のDOM要素を取得
             const element = document.getElementById('rating-full-capture');
             if (!element) return;
 
-            // 2. 処理中のトーストやアラート（任意）
-            console.log("画像生成を開始します...");
+            // PWA/モバイルでの処理落ちを防ぐため少し待機
+            this.syncStatus = "GENERATING IMAGE...";
 
             try {
-                // 3. html2canvasを実行
                 const canvas = await html2canvas(element, {
-                    useCORS: true,        // これが重要：外部サーバーの画像を許可
-                    allowTaint: false,    // セキュリティ設定
-                    scale: 2,             // 高画質にする
+                    useCORS: true,         // 外部サーバーのジャケット画像を許可
+                    allowTaint: false,
+                    scale: 2,              // 高画質(2倍)で生成
                     backgroundColor: "#05080c",
-                    // 画像が完全に読み込まれるまで少し待機させる設定
+                    // クローン作成時に一時的にレイアウトを調整する設定
                     onclone: (clonedDoc) => {
-                        clonedDoc.getElementById('rating-full-capture').style.display = 'block';
+                        const target = clonedDoc.getElementById('rating-full-capture');
+                        target.style.display = 'block';
+                        target.style.padding = '20px';
                     }
                 });
 
-                // 4. データURLに変換
-                const dataUrl = canvas.toDataURL("image/png");
+                // Canvasを画像(Base64)に変換
+                this.generatedImage = canvas.toDataURL("image/png");
 
-                // 5. 新しいタブで開く
-                const newTab = window.open('', '_blank');
-                if (newTab) {
-                    newTab.document.write(`
-                        <html>
-                            <head><title>CHUNITHM べ枠生成結果</title></head>
-                            <body style="margin:0; background:#05080c; display:flex; justify-content:center;">
-                                <img src="${dataUrl}" style="max-width:100%; height:auto;">
-                            </body>
-                        </html>
-                    `);
-                    newTab.document.close();
-                } else {
-                    alert("タブのポップアップがブロックされました。許可してください。");
-                }
+                // モーダルを表示
+                this.showModal = true;
+
             } catch (err) {
                 console.error("生成失敗:", err);
                 alert("画像の生成中にエラーが発生しました。");

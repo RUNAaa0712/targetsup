@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -58,6 +59,12 @@
                         <div v-else>
                             <p>ログイン中: <span style="color:var(--cyan)">{{auth.userId}}</span></p>
                             <button @click="loadAndSync" class="btn-action">全データの同期実行</button>
+
+                            <button @click="clearAllData" class="btn-action"
+                                style="background:#d32f2f; color:#fff; margin-top:20px;">
+                                データ整理 (全削除)
+                            </button>
+
                             <button @click="logout" class="btn-action"
                                 style="background:#444; color:#fff; margin-top:10px;">ログアウト</button>
                         </div>
@@ -298,15 +305,102 @@
                         </div>
                     </div>
                 </div>
+
+                <div v-else-if="tab === 'rating'" key="rating" class="rating-page">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn-action" @click="generateRatingImage" style="flex: 1;">画像を保存（別タブで開く）</button>
+                    </div>
+
+                    <div id="rating-full-capture" class="capture-container">
+                        <div class="rating-header-meta">
+                            <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
+                        </div>
+
+                        <h1 class="neon-title" style="margin-top:0;">CHUNITHM RATING ANALYSIS</h1>
+
+                        <div class="glass-card rating-header-card">
+                            <span class="section-label">TOTAL RATING</span>
+                            <div class="total-rating-value">{{ ratingFrames.total }}</div>
+                            <div class="rating-sub-info">
+                                BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg: {{ ratingFrames.newAvg }}
+                            </div>
+                        </div>
+
+                        <h2 class="section-label frame-title best-frame-color">BEST FRAME (TOP 30)</h2>
+                        <div class="rating-grid">
+                            <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="rating-card"
+                                :class="s.level">
+                                <div class="card-rank">#{{ i + 1 }}</div>
+                                <img :src="s.image" class="card-jacket" crossorigin="anonymous">
+                                <div class="card-info">
+                                    <div class="card-title">{{ s.title }}</div>
+                                    <div class="card-meta">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}</div>
+                                    <div class="card-score">{{ s.score.toLocaleString() }}</div>
+                                    <div class="card-rating">{{ s.rating.toFixed(4) }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 class="section-label frame-title new-frame-color" style="margin-top:30px;">NEW FRAME (TOP
+                            20)</h2>
+                        <div class="rating-grid">
+                            <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="rating-card"
+                                :class="s.level">
+                                <div class="card-rank">#{{ i + 1 }}</div>
+                                <img :src="s.image" class="card-jacket" crossorigin="anonymous">
+                                <div class="card-info">
+                                    <div class="card-title">{{ s.title }}</div>
+                                    <div class="card-meta">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}</div>
+                                    <div class="card-score">{{ s.score.toLocaleString() }}</div>
+                                    <div class="card-rating">{{ s.rating.toFixed(4) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </transition>
         </main>
 
         <nav class="nav-bar">
-            <div class="nav-item" :class="{active: tab === 'home'}" @click="tab = 'home'"><span>設定</span></div>
-            <div class="nav-item" :class="{active: tab === 'data'}" @click="tab = 'data'"><span>DB</span></div>
-            <div class="nav-item" :class="{active: tab === 'history'}" @click="tab = 'history'"><span>達成</span></div>
-            <div class="nav-item" :class="{active: tab === 'target'}" @click="tab = 'target'"><span>抽選</span></div>
-            <div class="nav-item" :class="{active: tab === 'chart'}" @click="tab = 'chart'"><span>定数表</span></div>
+            <div class="nav-item" :class="{active: tab === 'home'}" @click="tab = 'home'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M12 2L4 10V21H20V10L12 2Z" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>設定</span>
+            </div>
+            <div class="nav-item" :class="{active: tab === 'data'}" @click="tab = 'data'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M4 6H20M4 12H20M4 18H20" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>DB</span>
+            </div>
+            <div class="nav-item" :class="{active: tab === 'history'}" @click="tab = 'history'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M9 11L12 14L22 4M21 12V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H16"
+                        fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>達成</span>
+            </div>
+            <div class="nav-item" :class="{active: tab === 'target'}" @click="tab = 'target'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M12 2L15 8L22 9L17 14L18 21L12 17L6 21L7 14L2 9L9 8L12 2Z" fill="none"
+                        stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>抽選</span>
+            </div>
+            <div class="nav-item" :class="{active: tab === 'chart'}" @click="tab = 'chart'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M3 3V21H21M7 14L11 10L15 14L19 6" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>定数表</span>
+            </div>
+            <div class="nav-item" :class="{active: tab === 'rating'}" @click="tab = 'rating'">
+                <svg viewBox="0 0 24 24" class="nav-icon">
+                    <path d="M12 1L14.5 9H22L16 14L18.5 22L12 17.5L5.5 22L8 14L2 9H9.5L12 1Z" fill="none"
+                        stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>レート</span>
+            </div>
         </nav>
     </div>
 

@@ -317,6 +317,7 @@ select {
     background: #000;
     display: flex;
     border-top: 1px solid #222;
+    z-index: 9999;
 }
 
 .nav-item {
@@ -529,4 +530,255 @@ select {
 
 .diff-badge.BASIC {
     --badge-color: var(--basic);
+}
+
+/* ナビゲーションのアイコン対応 */
+.nav-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+.nav-item {
+    font-size: 9px;
+    /* 文字を少し小さくしてバランスをとる */
+}
+
+/* レート画面専用スタイル */
+.rating-page {
+    padding-bottom: 120px;
+}
+
+.rating-header {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(16, 23, 33, 0.9), rgba(0, 229, 255, 0.1));
+}
+
+.total-rating-value {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 15px var(--cyan);
+    font-family: 'Courier New', monospace;
+}
+
+.rating-sub-info {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.frame-title {
+    margin: 25px 0 10px 5px;
+    padding-left: 10px;
+    border-left: 4px solid;
+}
+
+.new-frame-color {
+    border-color: var(--aj);
+    color: var(--aj);
+}
+
+.best-frame-color {
+    border-color: var(--cyan);
+    color: var(--cyan);
+}
+
+/* カードグリッド：横に並べる */
+.rating-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.rating-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.rating-card.MASTER {
+    border-top: 3px solid var(--master);
+}
+
+.rating-card.ULTIMA {
+    border-top: 3px solid var(--ultima);
+}
+
+.card-rank {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 1px 4px;
+    font-size: 8px;
+    font-weight: bold;
+    border-radius: 2px;
+    z-index: 10;
+}
+
+.card-jacket {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    background: #111;
+    display: block;
+}
+
+.card-info {
+    padding: 8px;
+    flex: 1;
+}
+
+.card-title {
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.card-meta {
+    font-size: 9px;
+    color: #888;
+}
+
+.card-score {
+    font-size: 12px;
+    font-family: monospace;
+    color: #bbb;
+}
+
+.card-rating {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--cyan);
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* 保存ボタンのスタイル */
+.save-btn {
+    margin-top: 15px;
+    background: linear-gradient(45deg, var(--cyan), #0057ff);
+    border: none;
+    padding: 8px 24px;
+    color: #fff;
+    font-family: inherit;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.save-btn:hover {
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+.save-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+#rating-capture-area {
+    padding: 20px;
+    background: #05080c;
+    /* キャプチャ時の背景色を固定 */
+}
+
+/* 画像化コンテナのスタイル */
+.capture-container {
+    background: #05080c;
+    padding: 25px;
+    border-radius: 5px;
+}
+
+.rating-header-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--cyan);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+    padding-bottom: 5px;
+}
+
+.rating-header-card {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* グリッドを強制的に横5列にする */
+.rating-grid {
+    display: grid;
+    /* 画面幅に関係なく常に5列 */
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    /* カード間の隙間を詰める */
+    margin-bottom: 20px;
+}
+
+/* 小さくなったカードに合わせて内部のスタイルを調整 */
+.rating-card {
+    border-radius: 4px;
+    /* 角丸を少し小さく */
+}
+
+.card-rank {
+    font-size: 8px;
+    padding: 1px 4px;
+    top: 2px;
+    left: 2px;
+}
+
+.card-info {
+    padding: 4px;
+    /*内部の余白を詰める */
+}
+
+.card-title {
+    font-size: 8px;
+    /* 曲名を極小に */
+    margin-bottom: 2px;
+    /* 1行で表示し、はみ出たら点(...)にする */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* スペース確保のため、レベルと定数の表示は隠す（任意でコメントアウト解除） */
+.card-meta {
+    display: none;
+    /* font-size: 7px; */
+}
+
+.card-score {
+    font-size: 8px;
+    line-height: 1;
+}
+
+.card-rating {
+    font-size: 10px;
+    /* レート値は少し強調 */
+    margin-top: 2px;
+    font-weight: 800;
+}
+
+/* 画像化エリアの余白も調整 */
+.capture-container {
+    padding: 15px;
+    /* 少し詰める */
 }

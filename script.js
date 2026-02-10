@@ -1,12 +1,13 @@
 
 const { createApp } = Vue;
 const API_URL = 'https://runaaa0712.weblike.jp/chunithm/targetsup/save.php';
+const CURRENT_VERSION = 'X-VERSE-X';
 
 createApp({
     data() {
         return {
             tab: 'home', isLoggedIn: false, auth: { userId: '', password: '' },
-            musicData: [], achievements: {},
+            masterScoreData: [], musicData: [], achievements: {},
             isSyncing: false, syncStatus: '', syncProgress: 0, syncLogs: [],
             diffList: ['ULTIMA', 'MASTER', 'EXPERT', 'ADVANCED', 'BASIC'],
             levelList: ['15+', '15', '14+', '14', '13+', '13', '12+', '12', '11+', '11', '10+', '10', '9+', '9', '8+', '8', '7+', '7', '6', '5', '4', '3', '2', '1'],
@@ -54,11 +55,12 @@ createApp({
         },
         async initDB() {
             return new Promise(res => {
-                const req = indexedDB.open("ChuniDB", 1);
+                const req = indexedDB.open("ChuniDB", 2);
                 req.onupgradeneeded = e => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", { keyPath: "id" });
                     if (!db.objectStoreNames.contains("achievements")) db.createObjectStore("achievements", { keyPath: "id" });
+                    if (!db.objectStoreNames.contains("master_songs")) db.createObjectStore("master_songs", { keyPath: "id" });
                 };
                 req.onsuccess = e => { this.db = e.target.result; res(); };
             });
@@ -74,6 +76,38 @@ createApp({
                     fetch(`${API_URL}?action=getConst`).then(r => r.json()),
                     fetch(`${API_URL}?userId=${this.auth.userId}&password=${this.auth.password}`).then(r => r.json())
                 ]);
+
+                // 1. APIから取得した全データをマッピング（設定によるフィルタは一切かけない）
+                const allSongs = consts.flatMap(c => {
+                    const m = master.find(sm => sm.title === c.title) || {};
+                    return c.difficulties.map(d => {
+                        const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
+                        const sc = sData ? sData.score : 0;
+                        let lp = sData ? sData.lamp : 'CLEAR';
+                        if (sc >= 1010000) lp = 'AJC';
+
+                        return {
+                            id: `${c.title}_${d.level}`,
+                            title: c.title,
+                            image: c.imageUrl,
+                            level: d.level,
+                            const: d.const,
+                            score: sc,
+                            lamp: lp,
+                            levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??',
+                            genre: sData?.genre || m.catname || '未分類',
+                            version: c.version
+                        };
+                    });
+                });
+
+                // 2. スコアがある曲すべてを計算用マスターデータとして保持
+                const txMaster = this.db.transaction("master_songs", "readwrite");
+                const storeMaster = txMaster.objectStore("master_songs");
+                await storeMaster.clear();
+                allSongs.forEach(s => storeMaster.put(s));
+                this.masterScoreData = allSongs.filter(s => s.score > 0);
+
                 this.syncProgress = 40;
                 this.addLog("マスタデータ取得完了");
                 this.musicMaster = master;
@@ -113,7 +147,8 @@ createApp({
                             score: sc,
                             lamp: lp,
                             levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??',
-                            genre: genre
+                            genre: genre,
+                            version: c.version
                         };
                     });
                 });
@@ -157,7 +192,8 @@ createApp({
         },
         logout() { localStorage.removeItem('chuni_auth'); location.reload(); },
         async loadFromIndexedDB() {
-            const tx = this.db.transaction(["songs", "achievements"], "readonly");
+            const tx = this.db.transaction(["master_songs", "songs", "achievements"], "readonly");
+            tx.objectStore("master_songs").getAll().onsuccess = e => this.masterScoreData = e.target.result;
             tx.objectStore("songs").getAll().onsuccess = e => this.musicData = e.target.result;
             tx.objectStore("achievements").getAll().onsuccess = e => { e.target.result.forEach(a => this.achievements[a.id] = true); };
             this.musicMaster = await fetch(`${API_URL}?action=getMusic`).then(r => r.json());
@@ -284,7 +320,101 @@ createApp({
             }
 
             return config.achieved === 'true' ? success : !success;
-        }
+        },
+        calculateRating(score, constant) {
+            const s = parseInt(score);
+            const c = parseFloat(constant);
+            if (!s || !c) return 0;
+            let rating = 0;
+            if (s >= 1009000) rating = c + 2.15;
+            else if (s >= 1007500) rating = c + 2.0 + (s - 1007500) / 10000;
+            else if (s >= 1005000) rating = c + 1.5 + (s - 1005000) / 5000;
+            else if (s >= 1000000) rating = c + 1.0 + (s - 1000000) / 10000;
+            else if (s >= 975000) rating = c + (s - 975000) / 25000;
+            else if (s >= 900000) rating = c - 5.0 + (s - 900000) / 15000;
+            return Math.max(0, rating);
+        },
+        async generateRatingImage() {
+            // 1. キャプチャ対象の要素を取得
+            const element = document.getElementById('rating-full-capture');
+            if (!element) return;
+
+            // 2. 処理中のトーストやアラート（任意）
+            console.log("画像生成を開始します...");
+
+            try {
+                // 3. html2canvasを実行
+                const canvas = await html2canvas(element, {
+                    useCORS: true,        // これが重要：外部サーバーの画像を許可
+                    allowTaint: false,    // セキュリティ設定
+                    scale: 2,             // 高画質にする
+                    backgroundColor: "#05080c",
+                    // 画像が完全に読み込まれるまで少し待機させる設定
+                    onclone: (clonedDoc) => {
+                        clonedDoc.getElementById('rating-full-capture').style.display = 'block';
+                    }
+                });
+
+                // 4. データURLに変換
+                const dataUrl = canvas.toDataURL("image/png");
+
+                // 5. 新しいタブで開く
+                const newTab = window.open();
+                if (newTab) {
+                    newTab.document.write(`
+                        <html>
+                            <head><title>CHUNITHM べ枠生成結果</title></head>
+                            <body style="margin:0; background:#05080c; display:flex; justify-content:center;">
+                                <img src="${dataUrl}" style="max-width:100%; height:auto;">
+                            </body>
+                        </html>
+                    `);
+                    newTab.document.close();
+                } else {
+                    alert("タブのポップアップがブロックされました。許可してください。");
+                }
+            } catch (err) {
+                console.error("生成失敗:", err);
+                alert("画像の生成中にエラーが発生しました。");
+            }
+        },
+        async clearAllData() {
+            // 最終確認
+            if (!confirm("IndexedDB内の全楽曲データ、達成記録、および設定をすべて削除します。\nよろしいですか？")) return;
+
+            try {
+                // 1. 接続中のDBを閉じる
+                if (this.db) {
+                    this.db.close();
+                }
+
+                // 2. IndexedDB 自体を削除
+                const deleteReq = indexedDB.deleteDatabase("ChuniDB");
+
+                deleteReq.onsuccess = () => {
+                    // 3. ローカルストレージもクリア（認証情報は残す場合は removeItem を調整）
+                    localStorage.removeItem('chuni_settings');
+                    // 認証も解除して完全に初期化する場合
+                    localStorage.removeItem('chuni_auth');
+
+                    alert("すべてのデータを削除しました。アプリを再起動します。");
+                    location.reload();
+                };
+
+                deleteReq.onerror = () => {
+                    alert("データベースの削除に失敗しました。");
+                };
+
+                deleteReq.onblocked = () => {
+                    // 他のタブでアプリが開いている場合に発生
+                    alert("他のタブでアプリが開いているため削除できません。すべてのタブを閉じてから再度お試しください。");
+                };
+
+            } catch (e) {
+                console.error("Cleanup Error:", e);
+                alert("エラーが発生しました。");
+            }
+        },
     },
     computed: {
         remainingMusic() { return this.musicData.filter(s => !this.achievements[s.id]); },
@@ -318,6 +448,29 @@ createApp({
                     constVal: key,
                     songs: groups[key].sort((a, b) => b.score - a.score)
                 }));
+        },
+        ratingFrames() {
+            // loadAndSync時に保持した「全曲マスターデータ」から計算
+        if (!this.masterScoreData.length) return { best: [], new: [], total: "0.0000" };
+
+        const allRated = this.masterScoreData.filter(s => s.score > 0).map(s => ({
+            ...s,
+            rating: this.calculateRating(s.score, s.const)
+        })).sort((a, b) => b.rating - a.rating);
+
+        const bestFrame = allRated.filter(s => s.version !== CURRENT_VERSION).slice(0, 30);
+        const newFrame = allRated.filter(s => s.version === CURRENT_VERSION).slice(0, 20);
+
+        const bestSum = bestFrame.reduce((acc, s) => acc + Math.floor(s.rating * 100) / 100, 0);
+        const newSum = newFrame.reduce((acc, s) => acc + Math.floor(s.rating * 100) / 100, 0);
+
+        return {
+            best: bestFrame,
+            new: newFrame,
+            total: ((bestSum + newSum) / 50).toFixed(4),
+            bestAvg: (bestSum / 30 || 0).toFixed(4),
+            newAvg: (newSum / 20 || 0).toFixed(4)
+        };
         },
     }
 }).mount('#app');

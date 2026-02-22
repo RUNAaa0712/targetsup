@@ -300,19 +300,19 @@
                         <div class="rating-header-meta">
                             <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
                         </div>
-
-                        <h1 class="neon-title" style="margin-top:0;">CHUNITHM RATING ANALYSIS</h1>
+                        <h1 class="neon-title" style="margin-top:0;">Chunithm べ枠ジェネレーター</h1>
 
                         <div class="glass-card rating-header-card">
                             <span class="section-label">TOTAL RATING</span>
                             <div class="total-rating-value">{{ ratingFrames.total }}</div>
                             <div class="rating-sub-info">
-                                生レート: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg: {{
+                                Raw Rate: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg:
+                                {{
                                 ratingFrames.newAvg }}
                             </div>
                         </div>
 
-                        <h2 class="section-label frame-title best-frame-color">BEST FRAME (TOP 30)</h2>
+                        <h2 class="section-label frame-title best-frame-color">ベスト枠 (TOP 30)</h2>
                         <div class="rating-grid">
                             <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="rating-card"
                                 :class="s.level">
@@ -327,7 +327,7 @@
                             </div>
                         </div>
 
-                        <h2 class="section-label frame-title new-frame-color" style="margin-top:30px;">NEW FRAME (TOP
+                        <h2 class="section-label frame-title new-frame-color" style="margin-top:30px;">新曲枠 (TOP
                             20)</h2>
                         <div class="rating-grid">
                             <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="rating-card"

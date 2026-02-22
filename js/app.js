@@ -93,6 +93,9 @@ const app = createApp({
         const showModal = ref(false);
         const generatedImage = ref('');
 
+        // Excluded Modal State
+        const showExcludedModal = ref(false);
+
         let db = null;
         const CURRENT_VERSION = 'X-VERSE-X';
 
@@ -170,10 +173,11 @@ const app = createApp({
                 // 1. Map all data
                 const allSongs = consts.flatMap(c => {
                     const m = master.find(sm => sm.title === c.title) || {};
+                    const hasUltima = c.difficulties.some(dif => dif.level === 'ULTIMA');
                     return c.difficulties.map(d => {
-                        const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
-                        const sc = sData ? sData.score : 0;
-                        let lp = sData ? sData.lamp : 'CLEAR';
+                        const sDataScoreObj = scores[c.title]?.scores?.[d.level];
+                        const sc = sDataScoreObj ? sDataScoreObj.score : 0;
+                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
                         if (sc >= 1010000) lp = 'AJC';
 
                         return {
@@ -185,8 +189,9 @@ const app = createApp({
                             score: sc,
                             lamp: lp,
                             levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??',
-                            genre: sData?.genre || m.catname || '未分類',
-                            version: c.version
+                            genre: scores[c.title]?.genre || m.catname || '未分類',
+                            version: c.version,
+                            hasUltima: hasUltima // Add hasUltima flag
                         };
                     });
                 });
@@ -209,15 +214,13 @@ const app = createApp({
                     const hasUltima = c.difficulties.some(d => d.level === 'ULTIMA');
 
                     return c.difficulties.filter(d => {
-                        if (settings.excludeMasterIfUltima && hasUltima && d.level === 'MASTER') {
-                            return false;
-                        }
                         const lv = m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??';
-                        const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
-                        const sc = sData ? sData.score : 0;
-                        let lp = sData ? sData.lamp : 'CLEAR';
+                        const sDataScoreObj = scores[c.title]?.scores?.[d.level];
+                        const sc = sDataScoreObj ? sDataScoreObj.score : 0;
+                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
                         if (sc >= 1010000) lp = 'AJC';
 
+                        // Removed settings.excludeMasterIfUltima condition here to allow UI to filter dynamically
                         return settings.syncDiffs.includes(d.level) &&
                                (settings.syncLevels.length === 0 || settings.syncLevels.includes(lv)) &&
                                settings.syncLamps.includes(lp) &&
@@ -226,11 +229,11 @@ const app = createApp({
                                    return sc >= r.min && sc <= r.max;
                                }));
                     }).map(d => {
-                        const sData = scores[d.level.toLowerCase()]?.find(us => us.title === c.title);
-                        const sc = sData ? sData.score : 0;
-                        let lp = sData ? sData.lamp : 'CLEAR';
+                        const sDataScoreObj = scores[c.title]?.scores?.[d.level];
+                        const sc = sDataScoreObj ? sDataScoreObj.score : 0;
+                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
                         if (sc >= 1010000) lp = 'AJC';
-                        const genre = (sData && sData.genre) ? sData.genre : (m.catname || '未分類');
+                        const genre = scores[c.title]?.genre || m.catname || '未分類';
 
                         return {
                             id: `${c.title}_${d.level}`,
@@ -242,7 +245,8 @@ const app = createApp({
                             lamp: lp,
                             levelStr: m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??',
                             genre: genre,
-                            version: c.version
+                            version: c.version,
+                            hasUltima: hasUltima // Add hasUltima flag
                         };
                     });
                 });
@@ -324,6 +328,9 @@ const app = createApp({
 
         const filteredMusic = computed(() => {
             return remainingMusic.value.filter(s => {
+                if (settings.excludeMasterIfUltima && s.hasUltima && s.level === 'MASTER') {
+                    return false;
+                }
                 const dM = filters.diffs.includes(s.level);
                 const lM = filters.levels.length === 0 || filters.levels.includes(s.levelStr);
                 const lpM = filters.lamps.includes(s.lamp);
@@ -336,6 +343,10 @@ const app = createApp({
         });
 
         const genres = computed(() => [...new Set(musicMaster.value.map(m => m.catname))].filter(g => g));
+
+        const excludedMasterSongs = computed(() => {
+            return musicData.value.filter(s => s.hasUltima && s.level === 'MASTER').sort((a, b) => b.score - a.score);
+        });
 
         // Chart Logic
         const checkCondition = (song, config, specificScore) => {
@@ -372,7 +383,7 @@ const app = createApp({
 
         // Rating Logic
         const ratingFrames = computed(() => {
-            if (!masterScoreData.value.length) return { best: [], new: [], total: "0.0000" };
+            if (!masterScoreData.value.length) return { best: [], new: [], total: "0.00", rawTotal: "0.0000" };
 
             const allRated = masterScoreData.value.filter(s => s.score > 0).map(s => ({
                 ...s,
@@ -385,32 +396,35 @@ const app = createApp({
             const bestSum = bestFrame.reduce((acc, s) => acc + Math.floor(s.rating * 100) / 100, 0);
             const newSum = newFrame.reduce((acc, s) => acc + Math.floor(s.rating * 100) / 100, 0);
 
+            const bestAvg = bestSum / 30 || 0;
+            const newAvg = newSum / 20 || 0;
+
+            // rawRating is BestAvg * 0.60 + NewAvg * 0.40
+            const rawRating = (bestAvg * 0.6) + (newAvg * 0.4);
+            const rawRatingFixed4 = Math.floor(rawRating * 10000) / 10000;
+            const displayRating = Math.floor(rawRatingFixed4 * 100) / 100;
+
             return {
                 best: bestFrame,
                 new: newFrame,
-                total: ((bestSum + newSum) / 50).toFixed(4),
-                bestAvg: (bestSum / 30 || 0).toFixed(4),
-                newAvg: (newSum / 20 || 0).toFixed(4)
+                total: displayRating.toFixed(2),
+                rawTotal: rawRatingFixed4.toFixed(4),
+                bestAvg: bestAvg.toFixed(4),
+                newAvg: newAvg.toFixed(4)
             };
         });
 
         // Lottery Logic
-        const filterPoseExclusions = (songs) => {
-            const ultimaTitles = new Set(songs.filter(s => s.level === 'ULTIMA').map(s => s.title));
-            return songs.filter(s => !(s.level === 'MASTER' && ultimaTitles.has(s.title)));
-        };
-
         const drawLottery = async () => {
-            let pool = remainingMusic.value.filter(s =>
-                (target.genres.length === 0 || target.genres.includes(s.genre)) &&
-                target.diffs.includes(s.level) &&
-                target.levels.includes(s.levelStr) &&
-                target.lamps.includes(s.lamp)
-            );
-
-            if (settings.excludeMasterIfUltima) {
-                pool = filterPoseExclusions(pool);
-            }
+            let pool = remainingMusic.value.filter(s => {
+                if (settings.excludeMasterIfUltima && s.hasUltima && s.level === 'MASTER') {
+                    return false;
+                }
+                return (target.genres.length === 0 || target.genres.includes(s.genre)) &&
+                       target.diffs.includes(s.level) &&
+                       target.levels.includes(s.levelStr) &&
+                       target.lamps.includes(s.lamp);
+            });
 
             if (!pool.length) return alert("条件に一致する曲がありません");
 
@@ -490,11 +504,12 @@ const app = createApp({
             diffList, levelList, scoreFilterList, settings, filters, target,
             drawCount, results, musicMaster, chartSettings, chartOptions,
             enableAnimation, isAnimating, slots, animationStatusText,
-            showModal, generatedImage,
+            showModal, generatedImage, showExcludedModal,
             handleAuth, loadAndSync, logout: handleLogout, clearAllData,
             toggleAchievement, resetAchievements, toggle, drawLottery,
             saveToLocal, generateRatingImage, checkCondition, getRank, getRankThreshold,
-            remainingMusic, achievedMusic, filteredMusic, genres, groupedByConst, ratingFrames
+            remainingMusic, achievedMusic, filteredMusic, genres, groupedByConst, ratingFrames,
+            excludedMasterSongs
         };
     }
 });

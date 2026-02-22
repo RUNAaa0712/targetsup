@@ -15,17 +15,11 @@
     <div id="app" v-cloak>
         <div class="cyber-bg"></div>
 
-        <sync-overlay
-            :is-syncing="isSyncing"
-            :sync-status="syncStatus"
-            :sync-progress="syncProgress"
+        <sync-overlay :is-syncing="isSyncing" :sync-status="syncStatus" :sync-progress="syncProgress"
             :sync-logs="syncLogs">
         </sync-overlay>
 
-        <slot-machine
-            :is-animating="isAnimating"
-            :slots="slots"
-            :animation-status-text="animationStatusText">
+        <slot-machine :is-animating="isAnimating" :slots="slots" :animation-status-text="animationStatusText">
         </slot-machine>
 
         <main>
@@ -79,6 +73,10 @@
                             <div :class="['chip', {active: settings.excludeMasterIfUltima}]"
                                 @click="settings.excludeMasterIfUltima = !settings.excludeMasterIfUltima; saveToLocal()">
                                 ポゼ対象外除外（紫）
+                            </div>
+                            <div class="chip" style="border-color: #888; color: #ccc;"
+                                @click="showExcludedModal = true">
+                                📝対象外リスト確認 ({{ excludedMasterSongs.length }})
                             </div>
                         </div>
                     </div>
@@ -309,7 +307,8 @@
                             <span class="section-label">TOTAL RATING</span>
                             <div class="total-rating-value">{{ ratingFrames.total }}</div>
                             <div class="rating-sub-info">
-                                BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg: {{ ratingFrames.newAvg }}
+                                生レート: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg: {{
+                                ratingFrames.newAvg }}
                             </div>
                         </div>
 
@@ -360,6 +359,33 @@
                 </div>
                 <button @click="showModal = false" class="btn-action"
                     style="margin-top:10px; background:#333; color:#fff;">閉じる</button>
+            </div>
+        </div>
+
+        <div v-if="showExcludedModal" class="modal-overlay" @click.self="showExcludedModal = false">
+            <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <span style="color:var(--cyan); font-weight:bold;">ポゼ対象外 (ULTIMAが存在するMASTER譜面)</span>
+                    <button class="modal-close-x" @click="showExcludedModal = false">×</button>
+                </div>
+                <div class="modal-body" style="overflow-y: auto; padding-right: 5px; text-align: left;">
+                    <div v-for="s in excludedMasterSongs" :key="s.id" class="song-item"
+                        style="padding: 8px; margin-bottom: 5px; opacity: 0.8;">
+                        <img :src="s.image" style="width: 32px; height: 32px;">
+                        <div class="song-info">
+                            <span class="song-title" style="font-size: 11px;">{{ s.title }}</span>
+                            <div style="font-size: 9px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}
+                            </div>
+                        </div>
+                        <div class="score-val" style="font-size: 13px;">{{ s.score.toLocaleString() }}</div>
+                    </div>
+                    <div v-if="excludedMasterSongs.length === 0"
+                        style="text-align: center; color: #888; padding: 20px;">
+                        対象の楽曲はありません
+                    </div>
+                </div>
+                <button @click="showExcludedModal = false" class="btn-action"
+                    style="margin-top:10px; background:#333; color:#fff; flex-shrink: 0;">閉じる</button>
             </div>
         </div>
 

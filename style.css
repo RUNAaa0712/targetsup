@@ -58,6 +58,9 @@ main {
     overflow-y: auto;
     padding: 15px 15px 100px;
     box-sizing: border-box;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 .neon-title {
@@ -352,8 +355,15 @@ select {
 
 .chart-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 2px;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 4px;
+}
+
+@media (min-width: 600px) {
+    .chart-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 6px;
+    }
 }
 
 .chart-item {

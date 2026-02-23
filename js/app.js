@@ -43,7 +43,8 @@ const app = createApp({
             syncLamps: ['AJC', 'AJ', 'FC', 'CLEAR'],
             syncScores: [],
             excludeMasterIfUltima: false,
-            ratingLayout: 'portrait'
+            ratingLayout: 'portrait',
+            playerName: ''
         });
 
         const filters = reactive({

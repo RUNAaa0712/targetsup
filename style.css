@@ -731,14 +731,270 @@ select {
     margin-bottom: 25px;
 }
 
-/* グリッドを強制的に横5列にする */
+/* 共通のレイアウト要素はそのまま */
 .rating-grid {
     display: grid;
-    /* 画面幅に関係なく常に5列 */
-    grid-template-columns: repeat(5, 1fr);
     gap: 4px;
-    /* カード間の隙間を詰める */
     margin-bottom: 20px;
+}
+
+/* --- 配置パターン：縦長設定（従来） --- */
+.layout-portrait .rating-columns {
+    display: block;
+}
+
+.layout-portrait .rating-grid {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.layout-portrait .new-section h2 {
+    margin-top: 30px;
+}
+
+/* --- 配置パターン：横長設定 --- */
+.layout-landscape {
+    width: 1400px;
+    margin: 0 auto;
+    padding: 0 !important;
+    font-family: 'Avenir', 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+.landscape-layout-wrapper {
+    width: 100%;
+    padding: 20px 0 40px;
+}
+
+.ls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 40px;
+}
+
+.ls-header-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 1px;
+}
+
+.ls-header-sub {
+    font-size: 14px;
+    color: #888;
+    font-weight: bold;
+}
+
+.ls-player-box {
+    background: var(--glass);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    margin: 25px auto 40px;
+    width: fit-content;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    padding: 15px 0;
+    border: 1px solid rgba(0, 229, 255, 0.25);
+}
+
+.ls-player-item {
+    padding: 0 50px;
+    text-align: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ls-player-item:last-child {
+    border-right: none;
+}
+
+.ls-item-label {
+    font-size: 12px;
+    color: #aaa;
+    font-style: italic;
+    margin-bottom: 5px;
+}
+
+.ls-item-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.ls-panels {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.ls-panel {
+    background: var(--glass);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 6px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    width: 650px;
+    overflow: hidden;
+}
+
+.ls-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    color: #fff;
+    font-style: italic;
+}
+
+.best-panel .ls-panel-header {
+    background: linear-gradient(90deg, #df20df, #ff71ff);
+}
+
+.new-panel .ls-panel-header {
+    background: linear-gradient(90deg, #9f20df, #df71ff);
+}
+
+.ls-panel-title {
+    font-size: 18px;
+    font-weight: 900;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.ls-panel-date {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.ls-grid-inner {
+    padding: 12px;
+}
+
+.ls-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.ls-card {
+    aspect-ratio: 1/1;
+    position: relative;
+    border-radius: 2px;
+    background: #000;
+    overflow: hidden;
+}
+
+.ls-card.ls-MASTER {
+    border: 2px solid #a327b5;
+}
+
+.ls-card.ls-ULTIMA {
+    border: 2px solid #e91e63;
+}
+
+.ls-card.ls-EXPERT {
+    border: 2px solid #f44336;
+}
+
+.ls-card.ls-ADVANCED {
+    border: 2px solid #ff9800;
+}
+
+.ls-card.ls-BASIC {
+    border: 2px solid #4caf50;
+}
+
+.ls-card-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.ls-card-rank {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    z-index: 3;
+    border-bottom-left-radius: 4px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.best-panel .ls-card-rank,
+.best-section .ls-card-rank {
+    background: #d022b9;
+}
+
+.new-panel .ls-card-rank,
+.new-section .ls-card-rank {
+    background: #8922d0;
+}
+
+.ls-card-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px 6px 4px 6px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0.95) 100%);
+    box-sizing: border-box;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ls-title {
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    margin-bottom: 2px;
+}
+
+.ls-diff-text {
+    color: #fff;
+    font-size: 9px;
+    line-height: 1;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    margin-bottom: 2px;
+}
+
+.ls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.ls-row span {
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.ls-score-rank {
+    font-weight: bold;
+}
+
+.ls-rating-val {
+    font-size: 13px !important;
+    font-weight: bold;
+}
+
+.ls-footer {
+    text-align: left;
+    padding: 30px 40px 0;
+    font-size: 11px;
+    color: #666;
+    line-height: 1.5;
 }
 
 /* 小さくなったカードに合わせて内部のスタイルを調整 */

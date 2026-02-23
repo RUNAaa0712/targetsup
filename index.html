@@ -290,58 +290,181 @@
                 </div>
 
                 <div v-else-if="tab === 'rating'" key="rating" class="rating-page">
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn-action" @click="generateRatingImage">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                        <select v-model="settings.ratingLayout" @change="saveToLocal" style="width: auto;">
+                            <option value="portrait">配置: 縦長</option>
+                            <option value="landscape">配置: 横長</option>
+                        </select>
+                        <button class="btn-action" @click="generateRatingImage" style="margin-top: 0; flex: 1;">
                             画像を生成して保存
                         </button>
                     </div>
 
-                    <div id="rating-full-capture" class="capture-container">
-                        <div class="rating-header-meta">
-                            <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
-                        </div>
-                        <h1 class="neon-title" style="margin-top:0;">Chunithm べ枠ジェネレーター</h1>
-
-                        <div class="glass-card rating-header-card">
-                            <span class="section-label">TOTAL RATING</span>
-                            <div class="total-rating-value">{{ ratingFrames.total }}</div>
-                            <div class="rating-sub-info">
-                                Raw Rate: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW Avg:
-                                {{
-                                ratingFrames.newAvg }}
+                    <div id="rating-full-capture" class="capture-container" :class="'layout-' + settings.ratingLayout">
+                        <template v-if="settings.ratingLayout === 'portrait'">
+                            <div class="rating-header-meta">
+                                <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
                             </div>
-                        </div>
+                            <h1 class="neon-title" style="margin-top:0;">Chunithm べ枠ジェネレーター</h1>
 
-                        <h2 class="section-label frame-title best-frame-color">ベスト枠 (TOP 30)</h2>
-                        <div class="rating-grid">
-                            <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="rating-card"
-                                :class="s.level">
-                                <div class="card-rank">#{{ i + 1 }}</div>
-                                <img :src="s.image" class="card-jacket" crossorigin="anonymous">
-                                <div class="card-info">
-                                    <div class="card-title">{{ s.title }}</div>
-                                    <div class="card-meta">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}</div>
-                                    <div class="card-score">{{ s.score.toLocaleString() }}</div>
-                                    <div class="card-rating">{{ s.rating.toFixed(4) }}</div>
+                            <div class="glass-card rating-header-card">
+                                <span class="section-label">TOTAL RATING</span>
+                                <div class="total-rating-value">{{ ratingFrames.total }}</div>
+                                <div class="rating-sub-info">
+                                    Raw Rate: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW
+                                    Avg:
+                                    {{
+                                    ratingFrames.newAvg }}
                                 </div>
                             </div>
-                        </div>
 
-                        <h2 class="section-label frame-title new-frame-color" style="margin-top:30px;">新曲枠 (TOP
-                            20)</h2>
-                        <div class="rating-grid">
-                            <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="rating-card"
-                                :class="s.level">
-                                <div class="card-rank">#{{ i + 1 }}</div>
-                                <img :src="s.image" class="card-jacket" crossorigin="anonymous">
-                                <div class="card-info">
-                                    <div class="card-title">{{ s.title }}</div>
-                                    <div class="card-meta">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}</div>
-                                    <div class="card-score">{{ s.score.toLocaleString() }}</div>
-                                    <div class="card-rating">{{ s.rating.toFixed(4) }}</div>
+                            <div class="rating-columns">
+                                <div class="best-section">
+                                    <h2 class="section-label frame-title best-frame-color">ベスト枠 (TOP 30)</h2>
+                                    <div class="rating-grid">
+                                        <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="ls-card"
+                                            :class="'ls-'+s.level">
+                                            <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                            <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                            <div class="ls-card-content">
+                                                <div class="ls-title">{{ s.title }}</div>
+                                                <div class="ls-diff-text">{{ s.level }}</div>
+                                                <div class="ls-row">
+                                                    <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
+                                                    <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                </div>
+                                                <div class="ls-row">
+                                                    <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                        s.const.toFixed(1) : s.const) }}</span>
+                                                    <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="new-section">
+                                    <h2 class="section-label frame-title new-frame-color">新曲枠 (TOP 20)</h2>
+                                    <div class="rating-grid">
+                                        <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="ls-card"
+                                            :class="'ls-'+s.level">
+                                            <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                            <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                            <div class="ls-card-content">
+                                                <div class="ls-title">{{ s.title }}</div>
+                                                <div class="ls-diff-text">{{ s.level }}</div>
+                                                <div class="ls-row">
+                                                    <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
+                                                    <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                </div>
+                                                <div class="ls-row">
+                                                    <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                        s.const.toFixed(1) : s.const) }}</span>
+                                                    <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
+
+                        <template v-else>
+                            <div class="landscape-layout-wrapper">
+                                <div class="ls-header">
+                                    <div class="ls-header-title">CHUNITHM RATING ENTRIES</div>
+                                    <div class="ls-header-sub">Generated by targetsup</div>
+                                </div>
+                                <div class="ls-player-box">
+                                    <div class="ls-player-item">
+                                        <div class="ls-item-label">PLAYER NAME</div>
+                                        <div class="ls-item-value">{{ auth.userId || 'GUEST' }}</div>
+                                    </div>
+                                    <div class="ls-player-item">
+                                        <div class="ls-item-label">RATING</div>
+                                        <div class="ls-item-value">{{ ratingFrames.total }}</div>
+                                    </div>
+                                    <div class="ls-player-item">
+                                        <div class="ls-item-label">AVG. BEST</div>
+                                        <div class="ls-item-value">{{ ratingFrames.bestAvg }}</div>
+                                    </div>
+                                    <div class="ls-player-item" style="border-right: none;">
+                                        <div class="ls-item-label">AVG. NEW</div>
+                                        <div class="ls-item-value">{{ ratingFrames.newAvg }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="ls-panels">
+                                    <div class="ls-panel best-panel">
+                                        <div class="ls-panel-header">
+                                            <span class="ls-panel-title">BEST CHARTS</span>
+                                            <span class="ls-panel-date">Updated: {{ new
+                                                Date().toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit',
+                                                day:'2-digit'}) }}</span>
+                                        </div>
+                                        <div class="ls-grid-inner">
+                                            <div class="ls-grid">
+                                                <div v-for="(s, i) in ratingFrames.best" :key="'ls-best-'+i"
+                                                    class="ls-card" :class="'ls-'+s.level">
+                                                    <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                    <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                    <div class="ls-card-content">
+                                                        <div class="ls-title">{{ s.title }}</div>
+                                                        <div class="ls-diff-text">{{ s.level }}</div>
+                                                        <div class="ls-row">
+                                                            <span class="ls-score-val">{{ s.score.toLocaleString()
+                                                                }}</span>
+                                                            <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                        </div>
+                                                        <div class="ls-row">
+                                                            <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                                s.const.toFixed(1) : s.const) }}</span>
+                                                            <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="ls-panel new-panel">
+                                        <div class="ls-panel-header">
+                                            <span class="ls-panel-title">NEW CHARTS</span>
+                                            <span class="ls-panel-date">Updated: {{ new
+                                                Date().toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit',
+                                                day:'2-digit'}) }}</span>
+                                        </div>
+                                        <div class="ls-grid-inner">
+                                            <div class="ls-grid">
+                                                <div v-for="(s, i) in ratingFrames.new" :key="'ls-new-'+i"
+                                                    class="ls-card" :class="'ls-'+s.level">
+                                                    <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                    <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                    <div class="ls-card-content">
+                                                        <div class="ls-title">{{ s.title }}</div>
+                                                        <div class="ls-diff-text">{{ s.level }}</div>
+                                                        <div class="ls-row">
+                                                            <span class="ls-score-val">{{ s.score.toLocaleString()
+                                                                }}</span>
+                                                            <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                        </div>
+                                                        <div class="ls-row">
+                                                            <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                                s.const.toFixed(1) : s.const) }}</span>
+                                                            <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ls-footer">
+                                    楽曲ジャケット画像の著作権は、全て著作権所有者に帰属します。<br>
+                                    この画像は非公式スコアツール targetsup によって作成されました。
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </transition>

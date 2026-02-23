@@ -42,7 +42,8 @@ const app = createApp({
             syncLevels: ['14', '14+', '15', '15+'],
             syncLamps: ['AJC', 'AJ', 'FC', 'CLEAR'],
             syncScores: [],
-            excludeMasterIfUltima: false
+            excludeMasterIfUltima: false,
+            ratingLayout: 'portrait'
         });
 
         const filters = reactive({

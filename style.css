@@ -11,6 +11,7 @@
     --ajc: #00e5ff;
     --aj: #ffeb3b;
     --fc: #4caf50;
+    --clear: #2196f3;
 }
 
 body {
@@ -129,6 +130,39 @@ select {
     flex-wrap: nowrap;
     padding-bottom: 8px;
     scrollbar-width: none;
+}
+
+.chip-group.scroll-x::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
+
+.filter-header-title {
+    font-size: 11px;
+    color: #00e5ff;
+    font-weight: bold;
+}
+
+.filter-action-btn {
+    font-size: 10px;
+    color: #aaa;
+    background: #222;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+    border: 1px solid #444;
+}
+
+.filter-action-btn:active {
+    background: #444;
 }
 
 .chip {
@@ -253,6 +287,21 @@ select {
 .lamp-badge.FC {
     background: var(--fc);
     color: #fff;
+}
+
+.lamp-badge.CLEAR {
+    background: var(--clear);
+    color: #fff;
+}
+
+.lamp-badge.NONE {
+    background: #555;
+    color: #ddd;
+}
+
+.lamp-badge.NOPLAY {
+    background: #333;
+    color: #999;
 }
 
 .score-val {
@@ -739,12 +788,121 @@ select {
 }
 
 /* --- 配置パターン：縦長設定（従来） --- */
+.layout-portrait {
+    width: 1400px;
+    margin: 0 auto;
+    font-family: 'Avenir', 'Helvetica Neue', 'Arial', sans-serif;
+}
+
 .layout-portrait .rating-columns {
     display: block;
 }
 
 .layout-portrait .rating-grid {
     grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+/* 縦長レイアウト専用：ls-cardを横長（ランドスケープ型）にする */
+.layout-portrait .ls-card {
+    aspect-ratio: auto;
+    /* 正方形を解除 */
+    height: 60px;
+    /* 高さを小さめに固定して縦幅を抑える */
+    display: flex;
+    flex-direction: row;
+    background: linear-gradient(90deg, #05080c, rgba(20, 25, 35, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+/* 各難易度のボーダーを左側面に変更 */
+.layout-portrait .ls-card.ls-MASTER {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--master);
+}
+
+.layout-portrait .ls-card.ls-ULTIMA {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--ultima);
+}
+
+.layout-portrait .ls-card.ls-EXPERT {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--expert);
+}
+
+.layout-portrait .ls-card.ls-ADVANCED {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--advanced);
+}
+
+.layout-portrait .ls-card.ls-BASIC {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--basic);
+}
+
+/* 左側の画像エリア */
+.layout-portrait .ls-card-bg {
+    position: relative;
+    width: 60px;
+    /* 高さと同じにして正方形ジャケットに */
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 2px 0 0 2px;
+}
+
+/* SSSなどのランクバッジ（画像の上） */
+.layout-portrait .ls-card-rank {
+    right: auto;
+    left: 2px;
+    top: 2px;
+    padding: 1px 4px;
+    font-size: 8px;
+    line-height: 1;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* 右側の情報エリア */
+.layout-portrait .ls-card-content {
+    position: relative;
+    width: calc(100% - 60px);
+    height: 100%;
+    padding: 4px 8px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+}
+
+/* テキストの最適化 */
+.layout-portrait .ls-title {
+    font-size: 10px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layout-portrait .ls-diff-text {
+    display: none;
+    /* 横長モードでは色で難易度が分かるため非表示にしてスペースを節約 */
+}
+
+.layout-portrait .ls-row {
+    align-items: center;
+}
+
+.layout-portrait .ls-row span {
+    font-size: 9px;
+}
+
+.layout-portrait .ls-rating-val {
+    font-size: 12px !important;
+    color: var(--cyan);
 }
 
 .layout-portrait .new-section h2 {

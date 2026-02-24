@@ -51,23 +51,58 @@
 
                     <div class="glass-card" v-if="isLoggedIn">
                         <span class="section-label">同期対象設定 (マージ条件)</span>
+                        <div class="filter-header">
+                            <span class="filter-header-title">同期スコア (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(settings.syncScores, scoreFilterList.map(s=>s.label))">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(settings.syncScores)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
                             <div v-for="s in scoreFilterList"
                                 :class="['chip', {active: settings.syncScores.includes(s.label)}]"
                                 @click="toggle(settings.syncScores, s.label)">{{s.label}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">難易度 (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(settings.syncDiffs, diffList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(settings.syncDiffs)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
                             <div v-for="d in diffList" :class="['chip', {active: settings.syncDiffs.includes(d)}]"
                                 @click="toggle(settings.syncDiffs, d)">{{d}}</div>
+                        </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">レベル (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(settings.syncLevels, levelList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(settings.syncLevels)">全解除</span>
+                            </div>
                         </div>
                         <div class="chip-group scroll-x">
                             <div v-for="l in levelList" :class="['chip', {active: settings.syncLevels.includes(l)}]"
                                 @click="toggle(settings.syncLevels, l)">{{l}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">クリアランプ (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(settings.syncLamps, chartOptions.lampOptions.map(l=>l.id))">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(settings.syncLamps)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
-                                :class="['chip', {active: settings.syncLamps.includes(lp)}]"
-                                @click="toggle(settings.syncLamps, lp)">{{lp}}</div>
+                            <div v-for="lp in chartOptions.lampOptions"
+                                :class="['chip', {active: settings.syncLamps.includes(lp.id)}]"
+                                @click="toggle(settings.syncLamps, lp.id)">{{lp.label}}</div>
                         </div>
                         <div class="chip-group">
                             <div :class="['chip', {active: settings.excludeMasterIfUltima}]"
@@ -92,23 +127,56 @@
                 <div v-else-if="tab === 'data'" key="data">
                     <h1 class="neon-title">目標リスト (残り: {{remainingMusic.length}})</h1>
                     <div class="glass-card" style="padding:10px;">
+                        <div class="filter-header">
+                            <span class="filter-header-title">難易度 (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn" @click="selectAll(filters.diffs, diffList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(filters.diffs)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
                             <div v-for="d in diffList" :class="['chip', {active: filters.diffs.includes(d)}]"
                                 @click="toggle(filters.diffs, d)">{{d}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">レベル (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn" @click="selectAll(filters.levels, levelList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(filters.levels)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group scroll-x">
                             <div v-for="l in levelList" :class="['chip', {active: filters.levels.includes(l)}]"
                                 @click="toggle(filters.levels, l)">{{l}}</div>
+                        </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">スコア範囲 (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(filters.scores, scoreFilterList.map(s=>s.label))">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(filters.scores)">全解除</span>
+                            </div>
                         </div>
                         <div class="chip-group">
                             <div v-for="s in scoreFilterList"
                                 :class="['chip', {active: filters.scores.includes(s.label)}]"
                                 @click="toggle(filters.scores, s.label)">{{s.label}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">クリアランプ (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(filters.lamps, chartOptions.lampOptions.map(l=>l.id))">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(filters.lamps)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
-                                :class="['chip', {active: filters.lamps.includes(lp)}]"
-                                @click="toggle(filters.lamps, lp)">{{lp}}</div>
+                            <div v-for="lp in chartOptions.lampOptions"
+                                :class="['chip', {active: filters.lamps.includes(lp.id)}]"
+                                @click="toggle(filters.lamps, lp.id)">{{lp.label}}</div>
                         </div>
                     </div>
                     <div v-for="s in filteredMusic" :key="s.id" class="song-item"
@@ -117,7 +185,8 @@
                         <div class="song-info">
                             <span class="song-title">{{ s.title }}</span>
                             <div style="font-size:10px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}
-                                <span v-if="s.lamp" :class="['lamp-badge', s.lamp]">{{ s.lamp }}</span>
+                                <span v-if="s.lamp && s.lamp !== 'NOPLAY'" :class="['lamp-badge', s.lamp]">{{ s.lamp ===
+                                    'NONE' ? 'NO LAMP' : s.lamp }}</span>
                             </div>
                         </div>
                         <div class="score-val">{{ s.score.toLocaleString() }}</div>
@@ -140,25 +209,67 @@
                 </div>
 
                 <div v-else-if="tab === 'target'" key="target">
-                    <h1 class="neon-title">ミッション抽選</h1>
+                    <h1 class="neon-title">ランダム選曲</h1>
                     <div class="glass-card">
-                        <span class="section-label">ジャンル選択</span>
+                        <div class="filter-header">
+                            <span class="filter-header-title">ジャンル選択 (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn" @click="selectAll(target.genres, genres)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(target.genres)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group scroll-x">
                             <div v-for="g in genres" :class="['chip', {active: target.genres.includes(g)}]"
                                 @click="toggle(target.genres, g)">{{g}}</div>
+                        </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">難易度 (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn" @click="selectAll(target.diffs, diffList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(target.diffs)">全解除</span>
+                            </div>
                         </div>
                         <div class="chip-group">
                             <div v-for="d in diffList" :class="['chip', {active: target.diffs.includes(d)}]"
                                 @click="toggle(target.diffs, d)">{{d}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">レベル (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn" @click="selectAll(target.levels, levelList)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(target.levels)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group scroll-x">
                             <div v-for="l in levelList" :class="['chip', {active: target.levels.includes(l)}]"
                                 @click="toggle(target.levels, l)">{{l}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">クリアランプ (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(target.lamps, chartOptions.lampOptions.map(l=>l.id))">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(target.lamps)">全解除</span>
+                            </div>
+                        </div>
                         <div class="chip-group">
-                            <div v-for="lp in ['AJC','AJ','FC','CLEAR']"
-                                :class="['chip', {active: target.lamps.includes(lp)}]"
-                                @click="toggle(target.lamps, lp)">{{lp}}</div>
+                            <div v-for="lp in chartOptions.lampOptions"
+                                :class="['chip', {active: target.lamps.includes(lp.id)}]"
+                                @click="toggle(target.lamps, lp.id)">{{lp.label}}</div>
+                        </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">対象スコア範囲</span>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                            <input type="number" v-model.number="target.minScore" min="0" max="1010000"
+                                class="score-input" @change="saveToLocal" style="flex:1;">
+                            <span style="color: #aaa; font-size: 14px;">〜</span>
+                            <input type="number" v-model.number="target.maxScore" min="0" max="1010000"
+                                class="score-input" @change="saveToLocal" style="flex:1;">
                         </div>
 
                         <div style="margin:20px 0; display:flex; align-items:center; gap:20px;">
@@ -173,7 +284,7 @@
                             <label for="animToggle"
                                 style="color:#aaa; font-size:12px; cursor:pointer;">スロット演出を有効にする</label>
                         </div>
-                        <button @click="drawLottery" class="btn-mission">ミッション開始</button>
+                        <button @click="drawLottery" class="btn-mission">抽選開始</button>
                     </div>
 
                     <div v-for="r in results" :key="r.id" class="song-item"
@@ -183,7 +294,8 @@
                             <span class="song-title">{{ r.title }}</span>
                             <div style="font-size:10px; color:#888;">
                                 {{ r.level }} {{ r.levelStr }} | C: {{ r.const }}
-                                <span v-if="r.lamp" :class="['lamp-badge', r.lamp]">{{ r.lamp }}</span>
+                                <span v-if="r.lamp && r.lamp !== 'NOPLAY'" :class="['lamp-badge', r.lamp]">{{ r.lamp ===
+                                    'NONE' ? 'NO LAMP' : r.lamp }}</span>
                             </div>
                             <div style="font-size:9px; color:#666; margin-top:2px;">{{ r.genre }}</div>
                         </div>
@@ -207,9 +319,9 @@
                                 @click="chartSettings.mark.value = r">{{r}}</div>
                         </div>
                         <div v-if="chartSettings.mark.type === 'lamp'" class="chip-group">
-                            <div v-for="l in chartOptions.lampList"
-                                :class="['chip', {active: chartSettings.mark.value === l}]"
-                                @click="chartSettings.mark.value = l">{{l}}</div>
+                            <div v-for="l in chartOptions.lampOptions"
+                                :class="['chip', {active: chartSettings.mark.value === l.id}]"
+                                @click="chartSettings.mark.value = l.id">{{l.label}}</div>
                         </div>
                         <div v-if="chartSettings.mark.type === 'score'"><input type="number"
                                 v-model.number="chartSettings.specific.mark" class="score-input"></div>
@@ -233,9 +345,9 @@
                                 @click="chartSettings.display.value = r">{{r}}</div>
                         </div>
                         <div v-if="chartSettings.display.type === 'lamp'" class="chip-group">
-                            <div v-for="l in chartOptions.lampList"
-                                :class="['chip', {active: chartSettings.display.value === l}]"
-                                @click="chartSettings.display.value = l">{{l}}</div>
+                            <div v-for="l in chartOptions.lampOptions"
+                                :class="['chip', {active: chartSettings.display.value === l.id}]"
+                                @click="chartSettings.display.value = l.id">{{l.label}}</div>
                         </div>
                         <div v-if="chartSettings.display.type === 'score'"><input type="number"
                                 v-model.number="chartSettings.specific.display" class="score-input"></div>
@@ -280,7 +392,8 @@
                                         <div v-if="chartSettings.content.mode === 'rank' || chartSettings.content.mode === 'both'"
                                             class="overlay-text bold">{{ getRank(s.score) }}</div>
                                         <div v-if="chartSettings.content.mode === 'lamp'" class="overlay-text small">{{
-                                            s.lamp }}</div>
+                                            s.lamp === 'NONE' ? 'NO LAMP' : (s.lamp === 'NOPLAY' ? '未プレイ' : s.lamp) }}
+                                        </div>
                                         <div v-if="chartSettings.content.mode === 'score' || chartSettings.content.mode === 'both'"
                                             class="overlay-text">{{ s.score.toLocaleString() }}</div>
                                         <div v-if="chartSettings.content.mode === 'base'" class="overlay-text"

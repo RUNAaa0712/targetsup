@@ -40,7 +40,7 @@ const app = createApp({
         const settings = reactive({
             syncDiffs: ['MASTER', 'ULTIMA'],
             syncLevels: ['14', '14+', '15', '15+'],
-            syncLamps: ['AJC', 'AJ', 'FC', 'CLEAR'],
+            syncLamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
             syncScores: [],
             excludeMasterIfUltima: false,
             ratingLayout: 'portrait',
@@ -51,14 +51,16 @@ const app = createApp({
             diffs: ['MASTER', 'ULTIMA'],
             levels: [],
             scores: [],
-            lamps: ['AJC', 'AJ', 'FC', 'CLEAR']
+            lamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY']
         });
 
         const target = reactive({
             diffs: ['MASTER', 'ULTIMA'],
             levels: ['14', '14+', '15', '15+'],
             genres: [],
-            lamps: ['AJC', 'AJ', 'FC', 'CLEAR']
+            lamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
+            minScore: 0,
+            maxScore: 1010000
         });
 
         const drawCount = ref(1);
@@ -75,7 +77,14 @@ const app = createApp({
 
         const chartOptions = {
             rankList: ['SSS+', 'SSS', 'SS+', 'SS', 'S', 'AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'C', 'D'],
-            lampList: ['AJC', 'AJ', 'FC', 'CLEAR'],
+            lampList: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
+            lampOptions: [
+                { id: 'AJC', label: 'AJC' },
+                { id: 'AJ', label: 'AJ' },
+                { id: 'FC', label: 'FC' },
+                { id: 'NONE', label: 'ランプ無' },
+                { id: 'NOPLAY', label: '未プレイ' }
+            ],
             contentList: [
                 { label: 'ランク', value: 'rank' },
                 { label: 'ランプ', value: 'lamp' },
@@ -137,6 +146,16 @@ const app = createApp({
             saveToLocal();
         };
 
+        const selectAll = (targetArray, sourceArray) => {
+            targetArray.splice(0, targetArray.length, ...sourceArray);
+            saveToLocal();
+        };
+
+        const clearAll = (targetArray) => {
+            targetArray.splice(0, targetArray.length);
+            saveToLocal();
+        };
+
         const handleAuth = async (action) => {
             if (action === 'login') {
                 const res = await login(auth.userId, auth.password);
@@ -179,8 +198,11 @@ const app = createApp({
                     return c.difficulties.map(d => {
                         const sDataScoreObj = scores[c.title]?.scores?.[d.level];
                         const sc = sDataScoreObj ? sDataScoreObj.score : 0;
-                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
-                        if (sc >= 1010000) lp = 'AJC';
+                        let lp = 'NOPLAY';
+                        if (sc > 0) {
+                            lp = sDataScoreObj?.lamp || 'NONE';
+                            if (sc >= 1010000) lp = 'AJC';
+                        }
 
                         return {
                             id: `${c.title}_${d.level}`,
@@ -219,13 +241,17 @@ const app = createApp({
                         const lv = m[`lev_${d.level.toLowerCase().substring(0, 3)}`] || '??';
                         const sDataScoreObj = scores[c.title]?.scores?.[d.level];
                         const sc = sDataScoreObj ? sDataScoreObj.score : 0;
-                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
-                        if (sc >= 1010000) lp = 'AJC';
+                        let lp = 'NOPLAY';
+                        if (sc > 0) {
+                            lp = sDataScoreObj?.lamp || 'NONE';
+                            if (sc >= 1010000) lp = 'AJC';
+                        }
 
                         // Removed settings.excludeMasterIfUltima condition here to allow UI to filter dynamically
-                        return settings.syncDiffs.includes(d.level) &&
-                               (settings.syncLevels.length === 0 || settings.syncLevels.includes(lv)) &&
-                               settings.syncLamps.includes(lp) &&
+                        const isSyncLevelsFullySelectedOrEmpty = settings.syncLevels.length === 0 || settings.syncLevels.length === levelList.length;
+                        return (settings.syncDiffs.length === 0 || settings.syncDiffs.includes(d.level)) &&
+                               (isSyncLevelsFullySelectedOrEmpty ? true : settings.syncLevels.includes(lv)) &&
+                               (settings.syncLamps.length === 0 || settings.syncLamps.includes(lp)) &&
                                (settings.syncScores.length === 0 || settings.syncScores.some(label => {
                                    const r = scoreFilterList.find(f => f.label === label);
                                    return sc >= r.min && sc <= r.max;
@@ -233,8 +259,11 @@ const app = createApp({
                     }).map(d => {
                         const sDataScoreObj = scores[c.title]?.scores?.[d.level];
                         const sc = sDataScoreObj ? sDataScoreObj.score : 0;
-                        let lp = sDataScoreObj ? sDataScoreObj.lamp : 'CLEAR';
-                        if (sc >= 1010000) lp = 'AJC';
+                        let lp = 'NOPLAY';
+                        if (sc > 0) {
+                            lp = sDataScoreObj?.lamp || 'NONE';
+                            if (sc >= 1010000) lp = 'AJC';
+                        }
                         const genre = scores[c.title]?.genre || m.catname || '未分類';
 
                         return {
@@ -333,9 +362,9 @@ const app = createApp({
                 if (settings.excludeMasterIfUltima && s.hasUltima && s.level === 'MASTER') {
                     return false;
                 }
-                const dM = filters.diffs.includes(s.level);
+                const dM = filters.diffs.length === 0 || filters.diffs.includes(s.level);
                 const lM = filters.levels.length === 0 || filters.levels.includes(s.levelStr);
-                const lpM = filters.lamps.includes(s.lamp);
+                const lpM = filters.lamps.length === 0 || filters.lamps.includes(s.lamp);
                 const sM = filters.scores.length === 0 || filters.scores.some(label => {
                     const r = scoreFilterList.find(f => f.label === label);
                     return s.score >= r.min && s.score <= r.max;
@@ -357,7 +386,7 @@ const app = createApp({
             if (config.type === 'rank') {
                 success = score >= getRankThreshold(config.value);
             } else if (config.type === 'lamp') {
-                const lampMap = { 'AJC': 4, 'AJ': 3, 'FC': 2, 'CLEAR': 1 };
+                const lampMap = { 'AJC': 4, 'AJ': 3, 'FC': 2, 'NONE': 1, 'NOPLAY': 0 };
                 success = lampMap[song.lamp] >= lampMap[config.value];
             } else if (config.type === 'score') {
                 success = score >= (parseInt(specificScore) || 0);
@@ -423,9 +452,10 @@ const app = createApp({
                     return false;
                 }
                 return (target.genres.length === 0 || target.genres.includes(s.genre)) &&
-                       target.diffs.includes(s.level) &&
-                       target.levels.includes(s.levelStr) &&
-                       target.lamps.includes(s.lamp);
+                       (target.diffs.length === 0 || target.diffs.includes(s.level)) &&
+                       (target.levels.length === 0 || target.levels.includes(s.levelStr)) &&
+                       (target.lamps.length === 0 || target.lamps.includes(s.lamp)) &&
+                       (s.score >= target.minScore && s.score <= target.maxScore);
             });
 
             if (!pool.length) return alert("条件に一致する曲がありません");
@@ -482,6 +512,14 @@ const app = createApp({
                          const target = clonedDoc.getElementById('rating-full-capture');
                          target.style.display = 'block';
                          target.style.padding = '20px';
+                         // スマホ等の狭い画面でキャプチャする際も、十分な横幅を確保してレイアウト崩れを防ぐ
+                         if (target.classList.contains('layout-portrait')) {
+                            target.style.width = '1200px';
+                            target.style.minWidth = '1200px';
+                         } else if (target.classList.contains('layout-landscape')) {
+                            target.style.width = '1400px';
+                            target.style.minWidth = '1400px';
+                         }
                      }
                  });
                  generatedImage.value = canvas.toDataURL("image/png");
@@ -508,7 +546,7 @@ const app = createApp({
             enableAnimation, isAnimating, slots, animationStatusText,
             showModal, generatedImage, showExcludedModal,
             handleAuth, loadAndSync, logout: handleLogout, clearAllData,
-            toggleAchievement, resetAchievements, toggle, drawLottery,
+            toggleAchievement, resetAchievements, toggle, selectAll, clearAll, drawLottery,
             saveToLocal, generateRatingImage, checkCondition, getRank, getRankThreshold,
             remainingMusic, achievedMusic, filteredMusic, genres, groupedByConst, ratingFrames,
             excludedMasterSongs

@@ -82,7 +82,7 @@ const app = createApp({
                 { id: 'AJC', label: 'AJC' },
                 { id: 'AJ', label: 'AJ' },
                 { id: 'FC', label: 'FC' },
-                { id: 'NONE', label: 'ランプ無' },
+                { id: 'NONE', label: 'ランプ無/通常クリア' },
                 { id: 'NOPLAY', label: '未プレイ' }
             ],
             contentList: [
@@ -177,6 +177,14 @@ const app = createApp({
             location.reload();
         };
 
+        const clearCacheAndReload = () => {
+            if (confirm('システム設定とキャッシュをクリアします。よろしいですか？\n(ログイン情報は保持されますが、各フィルター設定やプレイヤー名などは初期化されます)')) {
+                // Keep auth and achievements, but clear standard settings
+                localStorage.removeItem('chuni_settings');
+                location.reload(true); // reload from server
+            }
+        };
+
         const loadAndSync = async () => {
             isSyncing.value = true;
             syncProgress.value = 0;
@@ -201,6 +209,7 @@ const app = createApp({
                         let lp = 'NOPLAY';
                         if (sc > 0) {
                             lp = sDataScoreObj?.lamp || 'NONE';
+                            if (lp === 'CLEAR') lp = 'NONE';
                             if (sc >= 1010000) lp = 'AJC';
                         }
 
@@ -244,11 +253,12 @@ const app = createApp({
                         let lp = 'NOPLAY';
                         if (sc > 0) {
                             lp = sDataScoreObj?.lamp || 'NONE';
+                            if (lp === 'CLEAR') lp = 'NONE'; // Convert old CLEAR to NONE
                             if (sc >= 1010000) lp = 'AJC';
                         }
 
-                        // Removed settings.excludeMasterIfUltima condition here to allow UI to filter dynamically
                         const isSyncLevelsFullySelectedOrEmpty = settings.syncLevels.length === 0 || settings.syncLevels.length === levelList.length;
+
                         return (settings.syncDiffs.length === 0 || settings.syncDiffs.includes(d.level)) &&
                                (isSyncLevelsFullySelectedOrEmpty ? true : settings.syncLevels.includes(lv)) &&
                                (settings.syncLamps.length === 0 || settings.syncLamps.includes(lp)) &&
@@ -262,6 +272,7 @@ const app = createApp({
                         let lp = 'NOPLAY';
                         if (sc > 0) {
                             lp = sDataScoreObj?.lamp || 'NONE';
+                            if (lp === 'CLEAR') lp = 'NONE'; // Convert old CLEAR to NONE
                             if (sc >= 1010000) lp = 'AJC';
                         }
                         const genre = scores[c.title]?.genre || m.catname || '未分類';
@@ -545,7 +556,7 @@ const app = createApp({
             drawCount, results, musicMaster, chartSettings, chartOptions,
             enableAnimation, isAnimating, slots, animationStatusText,
             showModal, generatedImage, showExcludedModal,
-            handleAuth, loadAndSync, logout: handleLogout, clearAllData,
+            handleAuth, loadAndSync, logout: handleLogout, clearAllData, clearCacheAndReload,
             toggleAchievement, resetAchievements, toggle, selectAll, clearAll, drawLottery,
             saveToLocal, generateRatingImage, checkCondition, getRank, getRankThreshold,
             remainingMusic, achievedMusic, filteredMusic, genres, groupedByConst, ratingFrames,

@@ -121,6 +121,17 @@
                                 placeholder="未設定の場合はGUEST"
                                 style="width:100%; max-width:200px; display:block; padding:8px; border-radius:4px; border:1px solid #333; background:#1a1a1a; color:#fff; margin-top:5px;">
                         </div>
+
+                        <div style="margin-top:30px; text-align: left; padding-top:20px; border-top:1px solid #333;">
+                            <span class="section-label" style="color:#ff5555; border-color:#ff5555;">システム設定</span>
+                            <p style="font-size:10px; color:#aaa; margin-bottom:10px; line-height:1.4;">
+                                アプリの動作がおかしい場合や、同期が反映されない場合は、保存された設定やキャッシュをクリアして初期化してください。
+                            </p>
+                            <button @click="clearCacheAndReload"
+                                style="background:transparent; border:1px solid #ff5555; color:#ff5555; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">
+                                キャッシュをクリアして再読み込み
+                            </button>
+                        </div>
                     </div>
                 </div>
 

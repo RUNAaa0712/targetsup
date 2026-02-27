@@ -137,6 +137,10 @@
 
                 <div v-else-if="tab === 'data'" key="data">
                     <h1 class="neon-title">目標リスト (残り: {{remainingMusic.length}})</h1>
+                    <div style="padding: 0 10px 10px 10px;">
+                        <input type="text" v-model="searchSynced" placeholder="曲名で検索..." class="score-input"
+                            style="width: 100%; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                    </div>
                     <div class="glass-card" style="padding:10px;">
                         <div class="filter-header">
                             <span class="filter-header-title">難易度 (未選択で全対象)</span>
@@ -207,6 +211,10 @@
 
                 <div v-else-if="tab === 'history'" key="history">
                     <h1 class="neon-title">達成済み ({{ achievedMusic.length }})</h1>
+                    <div style="padding: 0 10px 10px 10px;">
+                        <input type="text" v-model="searchSynced" placeholder="曲名で検索..." class="score-input"
+                            style="width: 100%; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                    </div>
                     <button @click="resetAchievements"
                         style="width:100%; padding:12px; background:#444; border:none; border-radius:8px; color:#fff; margin-bottom:15px; font-size:12px; font-weight:bold;">履歴をリセット</button>
                     <div v-for="s in achievedMusic" :key="s.id" class="song-item" style="opacity:0.6;">
@@ -314,290 +322,564 @@
                     </div>
                 </div>
 
-                <div v-else-if="tab === 'chart'" key="chart">
-                    <h1 class="neon-title">My定数表</h1>
-
-                    <div class="glass-card" style="padding: 10px;">
-                        <span class="section-label">マーク条件 (枠線強調)</span>
-                        <div class="chip-group">
-                            <div v-for="t in ['rank','lamp','score']"
-                                :class="['chip', {active: chartSettings.mark.type === t}]"
-                                @click="chartSettings.mark.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}</div>
-                        </div>
-                        <div v-if="chartSettings.mark.type === 'rank'" class="chip-group scroll-x">
-                            <div v-for="r in chartOptions.rankList"
-                                :class="['chip', {active: chartSettings.mark.value === r}]"
-                                @click="chartSettings.mark.value = r">{{r}}</div>
-                        </div>
-                        <div v-if="chartSettings.mark.type === 'lamp'" class="chip-group">
-                            <div v-for="l in chartOptions.lampOptions"
-                                :class="['chip', {active: chartSettings.mark.value === l.id}]"
-                                @click="chartSettings.mark.value = l.id">{{l.label}}</div>
-                        </div>
-                        <div v-if="chartSettings.mark.type === 'score'"><input type="number"
-                                v-model.number="chartSettings.specific.mark" class="score-input"></div>
-                        <div class="chip-group">
-                            <div :class="['chip', {active: chartSettings.mark.achieved === 'true'}]"
-                                @click="chartSettings.mark.achieved = 'true'">達成している</div>
-                            <div :class="['chip', {active: chartSettings.mark.achieved === 'false'}]"
-                                @click="chartSettings.mark.achieved = 'false'">していない</div>
-                        </div>
-
-                        <span class="section-label" style="margin-top:10px;">表示条件 (フィルタ)</span>
-                        <div class="chip-group">
-                            <div v-for="t in ['rank','lamp','score']"
-                                :class="['chip', {active: chartSettings.display.type === t}]"
-                                @click="chartSettings.display.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}
+                <div v-else-if="tab === 'tools'" key="tools">
+                    <h1 class="neon-title" style="margin-bottom: 10px;">ツール</h1>
+                    <div style="padding: 0 10px 15px 10px;">
+                        <div class="chip-group scroll-x" style="margin: 0; padding-bottom: 5px;">
+                            <div :class="['chip', {active: toolTab === 'database'}]" @click="toolTab = 'database'">
+                                マイ楽曲DB</div>
+                            <div :class="['chip', {active: toolTab === 'chart'}]" @click="toolTab = 'chart'">My定数表</div>
+                            <div :class="['chip', {active: toolTab === 'rating'}]" @click="toolTab = 'rating'">べ枠表生成
                             </div>
-                        </div>
-                        <div v-if="chartSettings.display.type === 'rank'" class="chip-group scroll-x">
-                            <div v-for="r in chartOptions.rankList"
-                                :class="['chip', {active: chartSettings.display.value === r}]"
-                                @click="chartSettings.display.value = r">{{r}}</div>
-                        </div>
-                        <div v-if="chartSettings.display.type === 'lamp'" class="chip-group">
-                            <div v-for="l in chartOptions.lampOptions"
-                                :class="['chip', {active: chartSettings.display.value === l.id}]"
-                                @click="chartSettings.display.value = l.id">{{l.label}}</div>
-                        </div>
-                        <div v-if="chartSettings.display.type === 'score'"><input type="number"
-                                v-model.number="chartSettings.specific.display" class="score-input"></div>
-                        <div class="chip-group">
-                            <div :class="['chip', {active: chartSettings.display.achieved === 'true'}]"
-                                @click="chartSettings.display.achieved = 'true'">表示する</div>
-                            <div :class="['chip', {active: chartSettings.display.achieved === 'false'}]"
-                                @click="chartSettings.display.achieved = 'false'">表示しない</div>
-                        </div>
-
-                        <span class="section-label" style="margin-top:10px;">表示内容 (オーバーレイ)</span>
-                        <div class="chip-group">
-                            <div v-for="c in chartOptions.contentList"
-                                :class="['chip', {active: chartSettings.content.mode === c.value}]"
-                                @click="chartSettings.content.mode = c.value">{{c.label}}</div>
-                        </div>
-                        <div v-if="chartSettings.content.mode === 'base'" class="chip-group scroll-x">
-                            <div v-for="r in chartOptions.rankList"
-                                :class="['chip', {active: chartSettings.content.baseRank === r}]"
-                                @click="chartSettings.content.baseRank = r">{{r}}基準</div>
+                            <div :class="['chip', {active: toolTab === 'all_music'}]"
+                                @click="toolTab = 'all_music'; fetchAllMusicDB()">全楽曲図鑑<span
+                                    v-if="allMusicList.length===0"
+                                    style="color:var(--cyan);font-size:10px;margin-left:4px;">(DL)</span></div>
                         </div>
                     </div>
 
-                    <div style="padding-bottom:100px;">
-                        <div v-for="group in groupedByConst" :key="group.constVal"
-                            style="margin-bottom:15px; content-visibility: auto; contain-intrinsic-size: 1px 200px;">
-
-                            <div class="const-header">
-                                {{ group.constVal }} <span style="font-size:9px; color:#444;">({{ group.songs.length
-                                    }})</span>
+                    <div v-if="toolTab === 'chart'">
+                        <div class="glass-card" style="padding: 10px; margin: 0 10px 10px 10px;">
+                            <span class="section-label">マーク条件 (枠線強調)</span>
+                            <div class="chip-group">
+                                <div v-for="t in ['rank','lamp','score']"
+                                    :class="['chip', {active: chartSettings.mark.type === t}]"
+                                    @click="chartSettings.mark.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}
+                                </div>
+                            </div>
+                            <div v-if="chartSettings.mark.type === 'rank'" class="chip-group scroll-x">
+                                <div v-for="r in chartOptions.rankList"
+                                    :class="['chip', {active: chartSettings.mark.value === r}]"
+                                    @click="chartSettings.mark.value = r">{{r}}</div>
+                            </div>
+                            <div v-if="chartSettings.mark.type === 'lamp'" class="chip-group">
+                                <div v-for="l in chartOptions.lampOptions"
+                                    :class="['chip', {active: chartSettings.mark.value === l.id}]"
+                                    @click="chartSettings.mark.value = l.id">{{l.label}}</div>
+                            </div>
+                            <div v-if="chartSettings.mark.type === 'score'"><input type="number"
+                                    v-model.number="chartSettings.specific.mark" class="score-input"></div>
+                            <div class="chip-group">
+                                <div :class="['chip', {active: chartSettings.mark.achieved === 'true'}]"
+                                    @click="chartSettings.mark.achieved = 'true'">達成している</div>
+                                <div :class="['chip', {active: chartSettings.mark.achieved === 'false'}]"
+                                    @click="chartSettings.mark.achieved = 'false'">していない</div>
                             </div>
 
-                            <div class="chart-grid">
-                                <div v-for="s in group.songs" :key="s.id" class="chart-item" :style="{
-                                        border: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '1.5px solid var(--cyan)' : 'none',
-                                        boxShadow: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '0 0 8px var(--cyan)' : 'none'
-                                     }">
-                                    <div :class="['diff-badge', s.level]"></div>
-                                    <img :src="s.image" class="chart-img" loading="lazy" decoding="async">
-
-                                    <div class="chart-overlay">
-                                        <div v-if="chartSettings.content.mode === 'rank' || chartSettings.content.mode === 'both'"
-                                            class="overlay-text bold">{{ getRank(s.score) }}</div>
-                                        <div v-if="chartSettings.content.mode === 'lamp'" class="overlay-text small">{{
-                                            s.lamp === 'NONE' ? 'NO LAMP' : (s.lamp === 'NOPLAY' ? '未プレイ' : s.lamp) }}
-                                        </div>
-                                        <div v-if="chartSettings.content.mode === 'score' || chartSettings.content.mode === 'both'"
-                                            class="overlay-text">{{ s.score.toLocaleString() }}</div>
-                                        <div v-if="chartSettings.content.mode === 'base'" class="overlay-text"
-                                            :style="{color: (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ? '#00ff00' : '#ff5555'}">
-                                            {{ (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ? '+' :
-                                            '' }}{{ (s.score -
-                                            getRankThreshold(chartSettings.content.baseRank)).toLocaleString() }}
-                                        </div>
-                                    </div>
+                            <span class="section-label" style="margin-top:10px;">表示条件 (フィルタ)</span>
+                            <div class="chip-group">
+                                <div v-for="t in ['rank','lamp','score']"
+                                    :class="['chip', {active: chartSettings.display.type === t}]"
+                                    @click="chartSettings.display.type = t">{{t==='rank'?'ランク':t==='lamp'?'ランプ':'スコア'}}
                                 </div>
+                            </div>
+                            <div v-if="chartSettings.display.type === 'rank'" class="chip-group scroll-x">
+                                <div v-for="r in chartOptions.rankList"
+                                    :class="['chip', {active: chartSettings.display.value === r}]"
+                                    @click="chartSettings.display.value = r">{{r}}</div>
+                            </div>
+                            <div v-if="chartSettings.display.type === 'lamp'" class="chip-group">
+                                <div v-for="l in chartOptions.lampOptions"
+                                    :class="['chip', {active: chartSettings.display.value === l.id}]"
+                                    @click="chartSettings.display.value = l.id">{{l.label}}</div>
+                            </div>
+                            <div v-if="chartSettings.display.type === 'score'"><input type="number"
+                                    v-model.number="chartSettings.specific.display" class="score-input"></div>
+                            <div class="chip-group">
+                                <div :class="['chip', {active: chartSettings.display.achieved === 'true'}]"
+                                    @click="chartSettings.display.achieved = 'true'">表示する</div>
+                                <div :class="['chip', {active: chartSettings.display.achieved === 'false'}]"
+                                    @click="chartSettings.display.achieved = 'false'">表示しない</div>
+                            </div>
+
+                            <span class="section-label" style="margin-top:10px;">表示内容 (オーバーレイ)</span>
+                            <div class="chip-group">
+                                <div v-for="c in chartOptions.contentList"
+                                    :class="['chip', {active: chartSettings.content.mode === c.value}]"
+                                    @click="chartSettings.content.mode = c.value">{{c.label}}</div>
+                            </div>
+                            <div v-if="chartSettings.content.mode === 'base'" class="chip-group scroll-x">
+                                <div v-for="r in chartOptions.rankList"
+                                    :class="['chip', {active: chartSettings.content.baseRank === r}]"
+                                    @click="chartSettings.content.baseRank = r">{{r}}基準</div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div v-else-if="tab === 'rating'" key="rating" class="rating-page">
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                        <select v-model="settings.ratingLayout" @change="saveToLocal" style="width: auto;">
-                            <option value="portrait">配置: 縦長</option>
-                            <option value="landscape">配置: 横長</option>
-                        </select>
-                        <button class="btn-action" @click="generateRatingImage" style="margin-top: 0; flex: 1;">
-                            画像を生成して保存
-                        </button>
-                    </div>
+                        <div style="padding-bottom:100px;">
+                            <div v-for="group in groupedByConst" :key="group.constVal"
+                                style="margin-bottom:15px; content-visibility: auto; contain-intrinsic-size: 1px 200px;">
 
-                    <div id="rating-full-capture" class="capture-container" :class="'layout-' + settings.ratingLayout">
-                        <template v-if="settings.ratingLayout === 'portrait'">
-                            <div class="rating-header-meta">
-                                <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
-                            </div>
-                            <h1 class="neon-title" style="margin-top:0;">Chunithm べ枠ジェネレーター</h1>
-
-                            <div class="glass-card rating-header-card">
-                                <div style="margin-bottom: 12px;">
-                                    <span class="section-label"
-                                        style="display:inline; margin-right:8px; border-bottom:none;">PLAYER NAME</span>
-                                    <span style="font-size: 22px; font-weight: bold; color: #fff;">{{
-                                        settings.playerName || 'GUEST' }}</span>
+                                <div class="const-header">
+                                    {{ group.constVal }} <span style="font-size:9px; color:#444;">({{ group.songs.length
+                                        }})</span>
                                 </div>
-                                <span class="section-label">TOTAL RATING</span>
-                                <div class="total-rating-value">{{ ratingFrames.total }}</div>
-                                <div class="rating-sub-info">
-                                    Raw Rate: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} | NEW
-                                    Avg:
-                                    {{
-                                    ratingFrames.newAvg }}
-                                </div>
-                            </div>
 
-                            <div class="rating-columns">
-                                <div class="best-section">
-                                    <h2 class="section-label frame-title best-frame-color">ベスト枠 (TOP 30)</h2>
-                                    <div class="rating-grid">
-                                        <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="ls-card"
-                                            :class="'ls-'+s.level">
-                                            <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
-                                            <div class="ls-card-rank">#{{ i + 1 }}</div>
-                                            <div class="ls-card-content">
-                                                <div class="ls-title">{{ s.title }}</div>
-                                                <div class="ls-diff-text">{{ s.level }}</div>
-                                                <div class="ls-row">
-                                                    <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
-                                                    <span class="ls-score-rank">{{ getRank(s.score) }}</span>
-                                                </div>
-                                                <div class="ls-row">
-                                                    <span class="ls-const-val">{{ (s.const % 1 === 0 ?
-                                                        s.const.toFixed(1) : s.const) }}</span>
-                                                    <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
-                                                </div>
+                                <div class="chart-grid">
+                                    <div v-for="s in group.songs" :key="s.id" class="chart-item" :style="{
+                                            border: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '1.5px solid var(--cyan)' : 'none',
+                                            boxShadow: checkCondition(s, chartSettings.mark, chartSettings.specific.mark) ? '0 0 8px var(--cyan)' : 'none'
+                                         }">
+                                        <div :class="['diff-badge', s.level]"></div>
+                                        <img :src="s.image" class="chart-img" loading="lazy" decoding="async">
+
+                                        <div class="chart-overlay">
+                                            <div v-if="chartSettings.content.mode === 'rank' || chartSettings.content.mode === 'both'"
+                                                class="overlay-text bold">{{ getRank(s.score) }}</div>
+                                            <div v-if="chartSettings.content.mode === 'lamp'"
+                                                class="overlay-text small">{{
+                                                s.lamp === 'NONE' ? 'NO LAMP' : (s.lamp === 'NOPLAY' ? '未プレイ' : s.lamp)
+                                                }}
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="new-section">
-                                    <h2 class="section-label frame-title new-frame-color">新曲枠 (TOP 20)</h2>
-                                    <div class="rating-grid">
-                                        <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="ls-card"
-                                            :class="'ls-'+s.level">
-                                            <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
-                                            <div class="ls-card-rank">#{{ i + 1 }}</div>
-                                            <div class="ls-card-content">
-                                                <div class="ls-title">{{ s.title }}</div>
-                                                <div class="ls-diff-text">{{ s.level }}</div>
-                                                <div class="ls-row">
-                                                    <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
-                                                    <span class="ls-score-rank">{{ getRank(s.score) }}</span>
-                                                </div>
-                                                <div class="ls-row">
-                                                    <span class="ls-const-val">{{ (s.const % 1 === 0 ?
-                                                        s.const.toFixed(1) : s.const) }}</span>
-                                                    <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
-                                                </div>
+                                            <div v-if="chartSettings.content.mode === 'score' || chartSettings.content.mode === 'both'"
+                                                class="overlay-text">{{ s.score.toLocaleString() }}</div>
+                                            <div v-if="chartSettings.content.mode === 'base'" class="overlay-text"
+                                                :style="{color: (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ? '#00ff00' : '#ff5555'}">
+                                                {{ (s.score - getRankThreshold(chartSettings.content.baseRank)) >= 0 ?
+                                                '+' :
+                                                '' }}{{ (s.score -
+                                                getRankThreshold(chartSettings.content.baseRank)).toLocaleString() }}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </template>
+                        </div>
+                    </div>
 
-                        <template v-else>
-                            <div class="landscape-layout-wrapper">
-                                <div class="ls-header">
-                                    <div class="ls-header-title">CHUNITHM べ枠ジェネレーター</div>
-                                    <div class="ls-header-sub">Generated by targetsup</div>
+                    <div v-else-if="toolTab === 'rating'" class="rating-page">
+                        <div
+                            style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; padding: 0 10px;">
+                            <select v-model="settings.ratingLayout" @change="saveToLocal" style="width: auto;">
+                                <option value="portrait">配置: 縦長</option>
+                                <option value="landscape">配置: 横長</option>
+                            </select>
+                            <button class="btn-action" @click="generateRatingImage" style="margin-top: 0; flex: 1;">
+                                画像を生成して保存
+                            </button>
+                        </div>
+
+                        <div id="rating-full-capture" class="capture-container"
+                            :class="'layout-' + settings.ratingLayout">
+                            <template v-if="settings.ratingLayout === 'portrait'">
+                                <div class="rating-header-meta">
+                                    <div class="generate-date">GENERATE: {{ new Date().toLocaleString() }}</div>
                                 </div>
-                                <div class="ls-player-box">
-                                    <div class="ls-player-item">
-                                        <div class="ls-item-label">プレイヤー名</div>
-                                        <div class="ls-item-value">{{ settings.playerName || 'GUEST' }}</div>
+                                <h1 class="neon-title" style="margin-top:0;">Chunithm べ枠ジェネレーター</h1>
+
+                                <div class="glass-card rating-header-card">
+                                    <div style="margin-bottom: 12px;">
+                                        <span class="section-label"
+                                            style="display:inline; margin-right:8px; border-bottom:none;">PLAYER
+                                            NAME</span>
+                                        <span style="font-size: 22px; font-weight: bold; color: #fff;">{{
+                                            settings.playerName || 'GUEST' }}</span>
                                     </div>
-                                    <div class="ls-player-item">
-                                        <div class="ls-item-label">TOTAL RATING</div>
-                                        <div class="ls-item-value">{{ ratingFrames.total }}</div>
-                                    </div>
-                                    <div class="ls-player-item">
-                                        <div class="ls-item-label">ベスト枠平均</div>
-                                        <div class="ls-item-value">{{ ratingFrames.bestAvg }}</div>
-                                    </div>
-                                    <div class="ls-player-item">
-                                        <div class="ls-item-label">新曲枠平均</div>
-                                        <div class="ls-item-value">{{ ratingFrames.newAvg }}</div>
+                                    <span class="section-label">TOTAL RATING</span>
+                                    <div class="total-rating-value">{{ ratingFrames.total }}</div>
+                                    <div class="rating-sub-info">
+                                        Raw Rate: {{ ratingFrames.rawTotal }}<br>BEST Avg: {{ ratingFrames.bestAvg }} |
+                                        NEW
+                                        Avg:
+                                        {{
+                                        ratingFrames.newAvg }}
                                     </div>
                                 </div>
 
-                                <div class="ls-panels">
-                                    <div class="ls-panel best-panel">
-                                        <div class="ls-panel-header">
-                                            <span class="ls-panel-title">ベスト枠 (TOP 30)</span>
-
-                                        </div>
-                                        <div class="ls-grid-inner">
-                                            <div class="ls-grid">
-                                                <div v-for="(s, i) in ratingFrames.best" :key="'ls-best-'+i"
-                                                    class="ls-card" :class="'ls-'+s.level">
-                                                    <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
-                                                    <div class="ls-card-rank">#{{ i + 1 }}</div>
-                                                    <div class="ls-card-content">
-                                                        <div class="ls-title">{{ s.title }}</div>
-                                                        <div class="ls-diff-text">{{ s.level }}</div>
-                                                        <div class="ls-row">
-                                                            <span class="ls-score-val">{{ s.score.toLocaleString()
-                                                                }}</span>
-                                                            <span class="ls-score-rank">{{ getRank(s.score) }}</span>
-                                                        </div>
-                                                        <div class="ls-row">
-                                                            <span class="ls-const-val">{{ (s.const % 1 === 0 ?
-                                                                s.const.toFixed(1) : s.const) }}</span>
-                                                            <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
-                                                        </div>
+                                <div class="rating-columns">
+                                    <div class="best-section">
+                                        <h2 class="section-label frame-title best-frame-color">ベスト枠 (TOP 30)</h2>
+                                        <div class="rating-grid">
+                                            <div v-for="(s, i) in ratingFrames.best" :key="'best-'+i" class="ls-card"
+                                                :class="'ls-'+s.level">
+                                                <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                <div class="ls-card-content">
+                                                    <div class="ls-title">{{ s.title }}</div>
+                                                    <div class="ls-diff-text">{{ s.level }}</div>
+                                                    <div class="ls-row">
+                                                        <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
+                                                        <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                    </div>
+                                                    <div class="ls-row">
+                                                        <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                            s.const.toFixed(1) : s.const) }}</span>
+                                                        <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="ls-panel new-panel">
-                                        <div class="ls-panel-header">
-                                            <span class="ls-panel-title">新曲枠 (TOP 20)</span>
-
-                                        </div>
-                                        <div class="ls-grid-inner">
-                                            <div class="ls-grid">
-                                                <div v-for="(s, i) in ratingFrames.new" :key="'ls-new-'+i"
-                                                    class="ls-card" :class="'ls-'+s.level">
-                                                    <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
-                                                    <div class="ls-card-rank">#{{ i + 1 }}</div>
-                                                    <div class="ls-card-content">
-                                                        <div class="ls-title">{{ s.title }}</div>
-                                                        <div class="ls-diff-text">{{ s.level }}</div>
-                                                        <div class="ls-row">
-                                                            <span class="ls-score-val">{{ s.score.toLocaleString()
-                                                                }}</span>
-                                                            <span class="ls-score-rank">{{ getRank(s.score) }}</span>
-                                                        </div>
-                                                        <div class="ls-row">
-                                                            <span class="ls-const-val">{{ (s.const % 1 === 0 ?
-                                                                s.const.toFixed(1) : s.const) }}</span>
-                                                            <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
-                                                        </div>
+                                    <div class="new-section">
+                                        <h2 class="section-label frame-title new-frame-color">新曲枠 (TOP 20)</h2>
+                                        <div class="rating-grid">
+                                            <div v-for="(s, i) in ratingFrames.new" :key="'new-'+i" class="ls-card"
+                                                :class="'ls-'+s.level">
+                                                <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                <div class="ls-card-content">
+                                                    <div class="ls-title">{{ s.title }}</div>
+                                                    <div class="ls-diff-text">{{ s.level }}</div>
+                                                    <div class="ls-row">
+                                                        <span class="ls-score-val">{{ s.score.toLocaleString() }}</span>
+                                                        <span class="ls-score-rank">{{ getRank(s.score) }}</span>
+                                                    </div>
+                                                    <div class="ls-row">
+                                                        <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                            s.const.toFixed(1) : s.const) }}</span>
+                                                        <span class="ls-rating-val">{{ s.rating.toFixed(2) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ls-footer">
-                                    楽曲ジャケット画像の著作権は、全て著作権所有者に帰属します。<br>
-                                    この画像は非公式スコアツール targetsup によって作成されました。
+                            </template>
+
+                            <template v-else>
+                                <div class="landscape-layout-wrapper">
+                                    <div class="ls-header">
+                                        <div class="ls-header-title">CHUNITHM べ枠ジェネレーター</div>
+                                        <div class="ls-header-sub">Generated by targetsup</div>
+                                    </div>
+                                    <div class="ls-player-box">
+                                        <div class="ls-player-item">
+                                            <div class="ls-item-label">プレイヤー名</div>
+                                            <div class="ls-item-value">{{ settings.playerName || 'GUEST' }}</div>
+                                        </div>
+                                        <div class="ls-player-item">
+                                            <div class="ls-item-label">TOTAL RATING</div>
+                                            <div class="ls-item-value">{{ ratingFrames.total }}</div>
+                                        </div>
+                                        <div class="ls-player-item">
+                                            <div class="ls-item-label">ベスト枠平均</div>
+                                            <div class="ls-item-value">{{ ratingFrames.bestAvg }}</div>
+                                        </div>
+                                        <div class="ls-player-item">
+                                            <div class="ls-item-label">新曲枠平均</div>
+                                            <div class="ls-item-value">{{ ratingFrames.newAvg }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="ls-panels">
+                                        <div class="ls-panel best-panel">
+                                            <div class="ls-panel-header">
+                                                <span class="ls-panel-title">ベスト枠 (TOP 30)</span>
+
+                                            </div>
+                                            <div class="ls-grid-inner">
+                                                <div class="ls-grid">
+                                                    <div v-for="(s, i) in ratingFrames.best" :key="'ls-best-'+i"
+                                                        class="ls-card" :class="'ls-'+s.level">
+                                                        <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                        <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                        <div class="ls-card-content">
+                                                            <div class="ls-title">{{ s.title }}</div>
+                                                            <div class="ls-diff-text">{{ s.level }}</div>
+                                                            <div class="ls-row">
+                                                                <span class="ls-score-val">{{ s.score.toLocaleString()
+                                                                    }}</span>
+                                                                <span class="ls-score-rank">{{ getRank(s.score)
+                                                                    }}</span>
+                                                            </div>
+                                                            <div class="ls-row">
+                                                                <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                                    s.const.toFixed(1) : s.const) }}</span>
+                                                                <span class="ls-rating-val">{{ s.rating.toFixed(2)
+                                                                    }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="ls-panel new-panel">
+                                            <div class="ls-panel-header">
+                                                <span class="ls-panel-title">新曲枠 (TOP 20)</span>
+
+                                            </div>
+                                            <div class="ls-grid-inner">
+                                                <div class="ls-grid">
+                                                    <div v-for="(s, i) in ratingFrames.new" :key="'ls-new-'+i"
+                                                        class="ls-card" :class="'ls-'+s.level">
+                                                        <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                        <div class="ls-card-rank">#{{ i + 1 }}</div>
+                                                        <div class="ls-card-content">
+                                                            <div class="ls-title">{{ s.title }}</div>
+                                                            <div class="ls-diff-text">{{ s.level }}</div>
+                                                            <div class="ls-row">
+                                                                <span class="ls-score-val">{{ s.score.toLocaleString()
+                                                                    }}</span>
+                                                                <span class="ls-score-rank">{{ getRank(s.score)
+                                                                    }}</span>
+                                                            </div>
+                                                            <div class="ls-row">
+                                                                <span class="ls-const-val">{{ (s.const % 1 === 0 ?
+                                                                    s.const.toFixed(1) : s.const) }}</span>
+                                                                <span class="ls-rating-val">{{ s.rating.toFixed(2)
+                                                                    }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ls-footer">
+                                        楽曲ジャケット画像の著作権は、全て著作権所有者に帰属します。<br>
+                                        この画像は非公式スコアツール targetsup によって作成されました。
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div v-else-if="toolTab === 'database'">
+                        <div class="glass-card" style="padding:10px; margin: 0 10px 10px 10px;">
+                            <button class="btn-action" style="margin-top:0; margin-bottom:10px; width:100%;"
+                                @click="showDbStats = !showDbStats">
+                                {{ showDbStats ? '統計情報を隠す' : '統計情報を表示する' }}
+                            </button>
+
+                            <div v-if="showDbStats"
+                                style="margin-bottom: 15px; font-size: 13px; text-align: left; padding-top: 5px; border-top: 1px solid #444;">
+
+                                <div
+                                    style="display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #555; padding-bottom: 8px;">
+                                    <button :class="['btn-action', {active: statTab === 'general'}]"
+                                        style="margin:0; padding: 5px 10px; flex:1; font-size:12px; height:auto;"
+                                        @click="statTab = 'general'">総合・難易度</button>
+                                    <button :class="['btn-action', {active: statTab === 'version'}]"
+                                        style="margin:0; padding: 5px 10px; flex:1; font-size:12px; height:auto;"
+                                        @click="statTab = 'version'">バージョン</button>
+                                    <button :class="['btn-action', {active: statTab === 'genre'}]"
+                                        style="margin:0; padding: 5px 10px; flex:1; font-size:12px; height:auto;"
+                                        @click="statTab = 'genre'">ジャンル</button>
+                                </div>
+
+                                <div v-if="statTab === 'general'">
+                                    <h3
+                                        style="margin: 0 0 10px 0; color: var(--cyan); border-bottom: 1px solid var(--cyan); padding-bottom: 3px;">
+                                        総合統計</h3>
+                                    <div
+                                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+                                        <div>プレイ済: <strong style="color: #fff;">{{ dbStats.total.played }}</strong> / {{
+                                            dbStats.total.count }} 曲</div>
+                                        <div>平均スコア: <strong style="color: #fff;">{{
+                                                dbStats.total.avgScore.toLocaleString()
+                                                }}</strong></div>
+                                    </div>
+                                    <div
+                                        style="display: flex; gap: 10px; margin-bottom: 5px; color: #ccc; flex-wrap: wrap;">
+                                        <span>AJC: <strong style="color:var(--master);">{{ dbStats.total.lamps.AJC
+                                                }}</strong></span>
+                                        <span>AJ: <strong style="color:var(--master);">{{ dbStats.total.lamps.AJ
+                                                }}</strong></span>
+                                        <span>FC: <strong style="color:#00ff00;">{{ dbStats.total.lamps.FC
+                                                }}</strong></span>
+                                        <span>CLEAR: {{ dbStats.total.lamps.CLEAR }}</span>
+                                    </div>
+                                    <div
+                                        style="display: flex; gap: 8px; margin-bottom: 15px; color: #ccc; flex-wrap: wrap; font-size: 11px;">
+                                        <span v-for="r in ['SSS+', 'SSS', 'SS+', 'SS', 'S+', 'S', 'AAA以下']" :key="r">
+                                            {{r}}: <strong style="color:#fff;">{{ dbStats.total.ranks[r] }}</strong>
+                                        </span>
+                                    </div>
+
+                                    <h3
+                                        style="margin: 0 0 10px 0; color: #ff9900; border-bottom: 1px solid #ff9900; padding-bottom: 3px;">
+                                        難易度別 (Expert以上)</h3>
+                                    <div v-for="d in ['EXPERT', 'MASTER', 'ULTIMA']" :key="d"
+                                        style="margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
+                                        <div style="font-weight: bold; margin-bottom: 3px;"
+                                            :style="{color: d==='ULTIMA'? 'var(--ultima)' : (d==='MASTER'? 'var(--master)': '#ff5555')}">
+                                            {{ d }}</div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span>Played: <strong>{{ dbStats.diffs[d].played }}</strong> / {{
+                                                dbStats.diffs[d].count }}</span>
+                                            <span>Avg: <strong>{{ dbStats.diffs[d].avgScore.toLocaleString()
+                                                    }}</strong></span>
+                                        </div>
+                                        <div
+                                            style="display: flex; gap: 6px; font-size: 11px; color:#aaa; margin-top: 3px;">
+                                            <span>AJC: {{ dbStats.diffs[d].lamps.AJC }}</span>
+                                            <span>AJ: {{ dbStats.diffs[d].lamps.AJ }}</span>
+                                            <span>FC: {{ dbStats.diffs[d].lamps.FC }}</span>
+                                            <span>SSS+: {{ dbStats.diffs[d].ranks['SSS+'] }}</span>
+                                            <span>SSS: {{ dbStats.diffs[d].ranks['SSS'] }}</span>
+                                        </div>
+                                    </div>
+
+                                    <h3
+                                        style="margin: 15px 0 10px 0; color: #00ffcc; border-bottom: 1px solid #00ffcc; padding-bottom: 3px;">
+                                        レベル別統計 (Lv14以上)</h3>
+                                    <div v-for="lv in ['14', '14+', '15', '15+']" :key="lv" style="margin-bottom: 8px;">
+                                        <template v-if="dbStats.levels[lv]">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #333; padding-bottom: 3px;">
+                                                <strong style="color: #fff; width: 40px;">Lv{{ lv }}</strong>
+                                                <span style="font-size: 11px;">Play: <strong>{{
+                                                        dbStats.levels[lv].played
+                                                        }}</strong>/{{ dbStats.levels[lv].count }}</span>
+                                                <span style="font-size: 11px;">Avg: <strong>{{
+                                                        dbStats.levels[lv].avgScore.toLocaleString() }}</strong></span>
+                                            </div>
+                                            <div
+                                                style="display: flex; gap: 8px; font-size: 10px; color:#888; padding-top: 3px;">
+                                                <span>AJ: {{ dbStats.levels[lv].lamps.AJ+dbStats.levels[lv].lamps.AJC
+                                                    }}</span>
+                                                <span>FC: {{ dbStats.levels[lv].lamps.FC }}</span>
+                                                <span>SSS+: {{ dbStats.levels[lv].ranks['SSS+'] }}</span>
+                                                <span>SSS: {{ dbStats.levels[lv].ranks['SSS'] }}</span>
+                                                <span>SS+: {{ dbStats.levels[lv].ranks['SS+'] }}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div v-if="statTab === 'version'">
+                                    <h3
+                                        style="margin: 0 0 10px 0; color: #cc88ff; border-bottom: 1px solid #cc88ff; padding-bottom: 3px;">
+                                        バージョン別</h3>
+                                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                                        <div v-for="(vData, vName) in dbStats.versions" :key="vName"
+                                            style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; font-size: 11px;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                                <strong style="color: #fff;">{{ vName === '不明' ? 'その他' : vName
+                                                    }}</strong>
+                                                <span style="color: #aaa;">Play: <strong style="color: #fff;">{{
+                                                        vData.played }}</strong> / {{ vData.count }}</span>
+                                                <span style="color: #aaa;">Avg: <strong style="color: #fff;">{{
+                                                        vData.avgScore.toLocaleString() }}</strong></span>
+                                            </div>
+                                            <div
+                                                style="display: flex; gap: 6px; font-size: 10px; color:#ccc; margin-top: 3px; border-top: 1px dashed #444; padding-top: 3px; flex-wrap: wrap;">
+                                                <span>AJC: <strong style="color:var(--master);">{{ vData.lamps.AJC
+                                                        }}</strong></span>
+                                                <span>AJ: <strong style="color:var(--master);">{{ vData.lamps.AJ
+                                                        }}</strong></span>
+                                                <span>FC: <strong style="color:#00ff00;">{{ vData.lamps.FC
+                                                        }}</strong></span>
+                                                <span>CLEAR: {{ vData.lamps.CLEAR }}</span>
+                                            </div>
+                                            <div
+                                                style="display: flex; gap: 6px; font-size: 10px; color:#aaa; margin-top: 2px; flex-wrap: wrap;">
+                                                <span v-for="r in ['SSS+', 'SSS', 'SS+', 'SS', 'S+', 'S', 'AAA以下']"
+                                                    :key="r">
+                                                    {{r}}: <strong style="color:#fff;">{{ vData.ranks[r] }}</strong>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="statTab === 'genre'">
+                                    <h3
+                                        style="margin: 0 0 10px 0; color: #ffff88; border-bottom: 1px solid #ffff88; padding-bottom: 3px;">
+                                        ジャンル別</h3>
+                                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                                        <div v-for="(gData, gName) in dbStats.genres" :key="gName"
+                                            style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; font-size: 11px;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                                <strong style="color: #fff;">{{ gName === '未分類' ? 'その他' : gName
+                                                    }}</strong>
+                                                <span style="color: #aaa;">Play: <strong style="color: #fff;">{{
+                                                        gData.played }}</strong> / {{ gData.count }}</span>
+                                                <span style="color: #aaa;">Avg: <strong style="color: #fff;">{{
+                                                        gData.avgScore.toLocaleString() }}</strong></span>
+                                            </div>
+                                            <div
+                                                style="display: flex; gap: 6px; font-size: 10px; color:#ccc; margin-top: 3px; border-top: 1px dashed #444; padding-top: 3px; flex-wrap: wrap;">
+                                                <span>AJC: <strong style="color:var(--master);">{{ gData.lamps.AJC
+                                                        }}</strong></span>
+                                                <span>AJ: <strong style="color:var(--master);">{{ gData.lamps.AJ
+                                                        }}</strong></span>
+                                                <span>FC: <strong style="color:#00ff00;">{{ gData.lamps.FC
+                                                        }}</strong></span>
+                                                <span>CLEAR: {{ gData.lamps.CLEAR }}</span>
+                                            </div>
+                                            <div
+                                                style="display: flex; gap: 6px; font-size: 10px; color:#aaa; margin-top: 2px; flex-wrap: wrap;">
+                                                <span v-for="r in ['SSS+', 'SSS', 'SS+', 'SS', 'S+', 'S', 'AAA以下']"
+                                                    :key="r">
+                                                    {{r}}: <strong style="color:#fff;">{{ gData.ranks[r] }}</strong>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </template>
+
+                            <input type="text" v-model="searchDb" placeholder="同期済み楽曲DB内を検索..." class="score-input"
+                                style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.5);">
+                            <div class="filter-header">
+                                <span class="filter-header-title">難易度 (複数選択可)</span>
+                            </div>
+                            <div class="chip-group">
+                                <div v-for="d in diffList" :class="['chip', {active: dbFilters.diffs.includes(d)}]"
+                                    @click="toggle(dbFilters.diffs, d)">{{d}}</div>
+                            </div>
+                            <p style="font-size:12px; color:#aaa; margin-top:10px;">※定数順に上位200件まで表示します</p>
+                        </div>
+                        <div v-for="s in databaseMusic" :key="s.id" class="song-item"
+                            :style="{borderLeftColor: s.level==='ULTIMA' ? 'var(--ultima)' : (s.level==='MASTER' ? 'var(--master)' : '#333')}">
+                            <img :src="s.image">
+                            <div class="song-info">
+                                <span class="song-title">{{ s.title }}</span>
+                                <div style="font-size:10px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const
+                                    }}
+                                </div>
+                            </div>
+                            <div v-if="s.score > 0" class="score-val" style="font-size: 13px;">{{
+                                s.score.toLocaleString() }}</div>
+                            <div v-else class="score-val" style="font-size: 11px; color: #666;">未プレイ</div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="toolTab === 'all_music'">
+                        <div class="glass-card" style="padding:10px; margin: 0 10px 10px 10px;">
+                            <input type="text" v-model="searchAllDb" placeholder="収録時の全曲DBを検索..." class="score-input"
+                                style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.5);">
+                            <p style="font-size:12px; color:#aaa; margin-top:5px;">※タップで難易度・ノーツ数を表示します</p>
+                        </div>
+                        <div v-if="allMusicList.length===0" style="text-align:center; padding: 20px; color:#aaa;">
+                            データを読み込み中...</div>
+                        <div v-for="s in filteredAllMusic" :key="s.title" class="song-item"
+                            style="border-left-color: #888; flex-direction: column; align-items: stretch;"
+                            @click="toggleSongExpanded(s.title)">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <img :src="s.imageUrl" style="width: 48px; height: 48px; border-radius: 4px;">
+                                <div class="song-info" style="flex: 1;">
+                                    <span class="song-title">{{ s.title }}</span>
+                                    <div style="font-size:10px; color:#888;">VER: {{ s.version }} | REL: {{
+                                        s.releaseDate }}</div>
+                                </div>
+                                <div style="color: var(--cyan); font-size: 12px;">ノーツ詳細 {{ expandedSongId === s.title ?
+                                    '▲' : '▼' }}</div>
+                            </div>
+
+                            <div v-if="expandedSongId === s.title"
+                                style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444; display: flex; flex-direction: column; gap: 6px;">
+                                <div v-for="d in s.difficulties" :key="d.level"
+                                    style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div :class="['diff-badge', d.level]"
+                                            style="position: relative; top: 0; left: 0; border: none; flex-shrink: 0;">
+                                        </div>
+                                        <span style="color: #ccc; font-weight: bold;">{{ d.level }}</span>
+                                    </div>
+                                    <div style="display: flex; gap: 15px;">
+                                        <span>定数: <b style="color:#fff;">{{ d.const }}</b></span>
+                                        <span>ノーツ: <b style="color:var(--cyan);">{{ d.notes }}</b></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="filteredAllMusic.length===0 && allMusicList.length > 0"
+                            style="text-align:center; padding: 20px; color:#aaa;">一致する楽曲がありません</div>
                     </div>
                 </div>
             </transition>

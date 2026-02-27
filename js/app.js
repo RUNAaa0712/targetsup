@@ -63,6 +63,26 @@ const app = createApp({
             maxScore: 1010000
         });
 
+        const searchSynced = ref('');
+        const searchDb = ref('');
+        const dbFilters = reactive({ diffs: ['MASTER', 'ULTIMA'] });
+
+        const toolTab = ref('database');
+        const allMusicList = ref([]);
+        const searchAllDb = ref('');
+        const expandedSongId = ref(null);
+
+        const fetchAllMusicDB = async () => {
+            if (allMusicList.value.length > 0) return;
+            try {
+                addLog('全楽曲データを取得中...');
+                allMusicList.value = await fetch('https://runaaa0712.weblike.jp/api/v1/chunithm/music/get_const_data.php').then(r => r.json());
+                addLog('全楽曲データ取得完了');
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
         const drawCount = ref(1);
         const results = ref([]);
         const musicMaster = ref([]);
@@ -366,10 +386,19 @@ const app = createApp({
 
         // Computed Properties
         const remainingMusic = computed(() => musicData.value.filter(s => !achievements[s.id]));
-        const achievedMusic = computed(() => musicData.value.filter(s => achievements[s.id]));
+        const achievedMusic = computed(() => {
+            const q = searchSynced.value.toLowerCase();
+            return musicData.value.filter(s => {
+                if (!achievements[s.id]) return false;
+                if (q && !s.title.toLowerCase().includes(q)) return false;
+                return true;
+            });
+        });
 
         const filteredMusic = computed(() => {
+            const q = searchSynced.value.toLowerCase();
             return remainingMusic.value.filter(s => {
+                if (q && !s.title.toLowerCase().includes(q)) return false;
                 if (settings.excludeMasterIfUltima && s.hasUltima && s.level === 'MASTER') {
                     return false;
                 }
@@ -388,6 +417,137 @@ const app = createApp({
 
         const excludedMasterSongs = computed(() => {
             return musicData.value.filter(s => s.hasUltima && s.level === 'MASTER').sort((a, b) => b.score - a.score);
+        });
+
+        const databaseMusic = computed(() => {
+            const q = searchDb.value.toLowerCase();
+            let arr = masterScoreData.value || [];
+
+            // Filter by selected difficulties if any are selected
+            if (dbFilters.diffs.length > 0) {
+                arr = arr.filter(s => dbFilters.diffs.includes(s.level));
+            }
+
+            if (q) {
+                arr = arr.filter(s => s.title.toLowerCase().includes(q));
+            }
+            return arr.sort((a, b) => b.const - a.const).slice(0, 200); // limit to 200 for perf
+        });
+
+        const filteredAllMusic = computed(() => {
+            let arr = allMusicList.value;
+            const q = searchAllDb.value.toLowerCase();
+            if (q) {
+                arr = arr.filter(m => m.title.toLowerCase().includes(q) || (m.version && m.version.toLowerCase().includes(q)));
+            }
+            // Sort by releaseDate if available, or just keeping the existing order. Limit 200.
+            return arr.slice(0, 200);
+        });
+
+        const toggleSongExpanded = (title) => {
+            expandedSongId.value = expandedSongId.value === title ? null : title;
+        };
+
+        const showDbStats = ref(false);
+        const statTab = ref('general');
+
+        const dbStats = computed(() => {
+            const stats = {
+                total: { count: 0, played: 0, sumScore: 0, lamps: {}, ranks: {} },
+                diffs: {},
+                levels: {},
+                versions: {},
+                genres: {}
+            };
+
+            const initBuckets = (obj) => {
+                obj.lamps = { AJC: 0, AJ: 0, FC: 0, CLEAR: 0 };
+                obj.ranks = { 'SSS+': 0, 'SSS': 0, 'SS+': 0, 'SS': 0, 'S+': 0, 'S': 0, 'AAA以下': 0 };
+            };
+
+            initBuckets(stats.total);
+
+            const diffList = ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'ULTIMA'];
+            diffList.forEach(d => {
+                stats.diffs[d] = { count: 0, played: 0, sumScore: 0 };
+                initBuckets(stats.diffs[d]);
+            });
+
+            // O(1) lookup Map for performance
+            const userMusicMap = new Map();
+            (musicData.value || []).forEach(m => userMusicMap.set(m.id, m));
+
+            (masterScoreData.value || []).forEach(s => {
+                const diff = s.level;
+                const lvStr = s.levelStr;
+                const ver = s.version || '不明';
+                const gnr = s.genre || '未分類';
+
+                stats.total.count++;
+                if (stats.diffs[diff]) stats.diffs[diff].count++;
+
+                if (!stats.levels[lvStr]) {
+                    stats.levels[lvStr] = { count: 0, played: 0, sumScore: 0 };
+                    initBuckets(stats.levels[lvStr]);
+                }
+                stats.levels[lvStr].count++;
+
+                // Collect Version stats
+                if (!stats.versions[ver]) {
+                    stats.versions[ver] = { count: 0, played: 0, sumScore: 0 };
+                    initBuckets(stats.versions[ver]);
+                }
+                stats.versions[ver].count++;
+
+                // Collect Genre stats
+                if (!stats.genres[gnr]) {
+                    stats.genres[gnr] = { count: 0, played: 0, sumScore: 0 };
+                    initBuckets(stats.genres[gnr]);
+                }
+                stats.genres[gnr].count++;
+
+                // O(1) map access
+                const userMusic = userMusicMap.get(s.id);
+                if (userMusic && userMusic.score > 0) {
+                    const score = userMusic.score;
+                    const rawRank = getRank(score);
+                    const rank = ['SSS+', 'SSS', 'SS+', 'SS', 'S+', 'S'].includes(rawRank) ? rawRank : 'AAA以下';
+
+                    let lamp = userMusic.lamp;
+                    if (lamp === 'AJC' || lamp === 'AJ' || lamp === 'FC') {
+                        // mapped directly
+                    } else {
+                        lamp = 'CLEAR';
+                    }
+
+                    const updateObj = (obj) => {
+                        obj.played++;
+                        obj.sumScore += score;
+                        if (obj.lamps[lamp] === undefined) obj.lamps[lamp] = 0;
+                        obj.lamps[lamp]++;
+                        if (obj.ranks[rank] === undefined) obj.ranks[rank] = 0;
+                        obj.ranks[rank]++;
+                    };
+
+                    updateObj(stats.total);
+                    if (stats.diffs[diff]) updateObj(stats.diffs[diff]);
+                    if (stats.levels[lvStr]) updateObj(stats.levels[lvStr]);
+                    updateObj(stats.versions[ver]);
+                    updateObj(stats.genres[gnr]);
+                }
+            });
+
+            // Calculate averages after loop
+            const calcAvg = (obj) => {
+                obj.avgScore = obj.played > 0 ? Math.floor(obj.sumScore / obj.played) : 0;
+            };
+            calcAvg(stats.total);
+            Object.values(stats.diffs).forEach(calcAvg);
+            Object.values(stats.levels).forEach(calcAvg);
+            Object.values(stats.versions).forEach(calcAvg);
+            Object.values(stats.genres).forEach(calcAvg);
+
+            return stats;
         });
 
         // Chart Logic
@@ -556,6 +716,8 @@ const app = createApp({
             drawCount, results, musicMaster, chartSettings, chartOptions,
             enableAnimation, isAnimating, slots, animationStatusText,
             showModal, generatedImage, showExcludedModal,
+            searchSynced, searchDb, dbFilters, databaseMusic, showDbStats, statTab, dbStats,
+            toolTab, allMusicList, searchAllDb, expandedSongId, fetchAllMusicDB, filteredAllMusic, toggleSongExpanded,
             handleAuth, loadAndSync, logout: handleLogout, clearAllData, clearCacheAndReload,
             toggleAchievement, resetAchievements, toggle, selectAll, clearAll, drawLottery,
             saveToLocal, generateRatingImage, checkCondition, getRank, getRankThreshold,

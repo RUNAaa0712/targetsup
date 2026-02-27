@@ -1,3 +1,5 @@
 /reference
 AGENT.md
 .DS_Store
+/server
+output.js

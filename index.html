@@ -104,6 +104,20 @@
                                 :class="['chip', {active: settings.syncLamps.includes(lp.id)}]"
                                 @click="toggle(settings.syncLamps, lp.id)">{{lp.label}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">バージョン (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(settings.syncVersions, VERSION_ORDER)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(settings.syncVersions)">全解除</span>
+                            </div>
+                        </div>
+                        <div class="chip-group scroll-x">
+                            <div v-for="v in VERSION_ORDER"
+                                :class="['chip', {active: settings.syncVersions.includes(v)}]"
+                                @click="toggle(settings.syncVersions, v)">{{v}}</div>
+                        </div>
                         <div class="chip-group">
                             <div :class="['chip', {active: settings.excludeMasterIfUltima}]"
                                 @click="settings.excludeMasterIfUltima = !settings.excludeMasterIfUltima; saveToLocal()">
@@ -137,9 +151,14 @@
 
                 <div v-else-if="tab === 'data'" key="data">
                     <h1 class="neon-title">目標リスト (残り: {{remainingMusic.length}})</h1>
-                    <div style="padding: 0 10px 10px 10px;">
+                    <div style="padding: 0 10px 10px 10px; display: flex; gap: 10px;">
                         <input type="text" v-model="searchSynced" placeholder="曲名で検索..." class="score-input"
-                            style="width: 100%; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                            style="flex: 1; min-width: 0; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                        <select v-model="settings.sortData" @change="saveToLocal" class="score-input"
+                            style="width: 140px; padding: 8px; font-size: 13px; background: #222; color: #fff; border: 1px solid #444;">
+                            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}
+                            </option>
+                        </select>
                     </div>
                     <div class="glass-card" style="padding:10px;">
                         <div class="filter-header">
@@ -193,6 +212,19 @@
                                 :class="['chip', {active: filters.lamps.includes(lp.id)}]"
                                 @click="toggle(filters.lamps, lp.id)">{{lp.label}}</div>
                         </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">バージョン (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(filters.versions, VERSION_ORDER)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(filters.versions)">全解除</span>
+                            </div>
+                        </div>
+                        <div class="chip-group scroll-x">
+                            <div v-for="v in VERSION_ORDER" :class="['chip', {active: filters.versions.includes(v)}]"
+                                @click="toggle(filters.versions, v)">{{v}}</div>
+                        </div>
                     </div>
                     <div v-for="s in filteredMusic" :key="s.id" class="song-item"
                         :style="{borderLeftColor: s.level==='ULTIMA' ? 'var(--ultima)' : (s.level==='MASTER' ? 'var(--master)' : '#333')}">
@@ -211,9 +243,14 @@
 
                 <div v-else-if="tab === 'history'" key="history">
                     <h1 class="neon-title">達成済み ({{ achievedMusic.length }})</h1>
-                    <div style="padding: 0 10px 10px 10px;">
+                    <div style="padding: 0 10px 10px 10px; display: flex; gap: 10px;">
                         <input type="text" v-model="searchSynced" placeholder="曲名で検索..." class="score-input"
-                            style="width: 100%; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                            style="flex: 1; min-width: 0; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                        <select v-model="settings.sortHistory" @change="saveToLocal" class="score-input"
+                            style="width: 140px; padding: 8px; font-size: 13px; background: #222; color: #fff; border: 1px solid #444;">
+                            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}
+                            </option>
+                        </select>
                     </div>
                     <button @click="resetAchievements"
                         style="width:100%; padding:12px; background:#444; border:none; border-radius:8px; color:#fff; margin-bottom:15px; font-size:12px; font-weight:bold;">履歴をリセット</button>
@@ -278,6 +315,19 @@
                             <div v-for="lp in chartOptions.lampOptions"
                                 :class="['chip', {active: target.lamps.includes(lp.id)}]"
                                 @click="toggle(target.lamps, lp.id)">{{lp.label}}</div>
+                        </div>
+
+                        <div class="filter-header">
+                            <span class="filter-header-title">バージョン (未選択で全対象)</span>
+                            <div>
+                                <span class="filter-action-btn"
+                                    @click="selectAll(target.versions, VERSION_ORDER)">全選択</span>
+                                <span class="filter-action-btn" @click="clearAll(target.versions)">全解除</span>
+                            </div>
+                        </div>
+                        <div class="chip-group scroll-x">
+                            <div v-for="v in VERSION_ORDER" :class="['chip', {active: target.versions.includes(v)}]"
+                                @click="toggle(target.versions, v)">{{v}}</div>
                         </div>
 
                         <div class="filter-header">
@@ -689,11 +739,11 @@
 
                                     <h3
                                         style="margin: 0 0 10px 0; color: #ff9900; border-bottom: 1px solid #ff9900; padding-bottom: 3px;">
-                                        難易度別 (Expert以上)</h3>
-                                    <div v-for="d in ['EXPERT', 'MASTER', 'ULTIMA']" :key="d"
+                                        難易度別 (全難易度)</h3>
+                                    <div v-for="d in diffList" :key="d"
                                         style="margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
                                         <div style="font-weight: bold; margin-bottom: 3px;"
-                                            :style="{color: d==='ULTIMA'? 'var(--ultima)' : (d==='MASTER'? 'var(--master)': '#ff5555')}">
+                                            :style="{color: d==='ULTIMA'? 'var(--ultima)' : (d==='MASTER'? 'var(--master)': (d==='EXPERT'? '#ff5555' : (d==='ADVANCED'? '#ffaa00' : '#00ff00')))}">
                                             {{ d }}</div>
                                         <div style="display: flex; justify-content: space-between;">
                                             <span>Played: <strong>{{ dbStats.diffs[d].played }}</strong> / {{
@@ -706,8 +756,10 @@
                                             <span>AJC: {{ dbStats.diffs[d].lamps.AJC }}</span>
                                             <span>AJ: {{ dbStats.diffs[d].lamps.AJ }}</span>
                                             <span>FC: {{ dbStats.diffs[d].lamps.FC }}</span>
-                                            <span>SSS+: {{ dbStats.diffs[d].ranks['SSS+'] }}</span>
-                                            <span>SSS: {{ dbStats.diffs[d].ranks['SSS'] }}</span>
+                                            <span v-if="['EXPERT', 'MASTER', 'ULTIMA'].includes(d)">SSS+: {{
+                                                dbStats.diffs[d].ranks['SSS+'] }}</span>
+                                            <span v-if="['EXPERT', 'MASTER', 'ULTIMA'].includes(d)">SSS: {{
+                                                dbStats.diffs[d].ranks['SSS'] }}</span>
                                         </div>
                                     </div>
 
@@ -771,6 +823,23 @@
                                                     {{r}}: <strong style="color:#fff;">{{ vData.ranks[r] }}</strong>
                                                 </span>
                                             </div>
+                                            <!-- Difficulty Breakdown inside versions -->
+                                            <div style="margin-top: 8px; border-top: 1px solid #444; padding-top: 5px;">
+                                                <div v-for="d in diffList" :key="'ver-'+d">
+                                                    <div v-if="vData.diffs[d].count > 0"
+                                                        style="display: flex; align-items: center; font-size: 9px; margin-bottom: 2px;">
+                                                        <span style="width: 65px; text-align: left;"
+                                                            :style="{color: d==='ULTIMA'? 'var(--ultima)' : (d==='MASTER'? 'var(--master)': (d==='EXPERT'? '#ff5555' : (d==='ADVANCED'? '#ffaa00' : '#00ff00')))}">{{d}}</span>
+                                                        <span style="flex: 1; color:#888; text-align: center;">Play:
+                                                            <strong
+                                                                style="color:#ccc;">{{vData.diffs[d].played}}</strong><span
+                                                                style="font-size: 0.9em;">/{{vData.diffs[d].count}}</span></span>
+                                                        <span style="width: 100px; color:#888; text-align: right;">Avg:
+                                                            <strong
+                                                                style="color:#ccc;">{{vData.diffs[d].avgScore.toLocaleString()}}</strong></span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -808,19 +877,52 @@
                                                     {{r}}: <strong style="color:#fff;">{{ gData.ranks[r] }}</strong>
                                                 </span>
                                             </div>
+
+                                            <!-- Difficulty Breakdown inside genres -->
+                                            <div style="margin-top: 8px; border-top: 1px solid #444; padding-top: 5px;">
+                                                <div v-for="d in diffList" :key="'gnr-'+d">
+                                                    <div v-if="gData.diffs[d].count > 0"
+                                                        style="display: flex; align-items: center; font-size: 9px; margin-bottom: 2px;">
+                                                        <span style="width: 65px; text-align: left;"
+                                                            :style="{color: d==='ULTIMA'? 'var(--ultima)' : (d==='MASTER'? 'var(--master)': (d==='EXPERT'? '#ff5555' : (d==='ADVANCED'? '#ffaa00' : '#00ff00')))}">{{d}}</span>
+                                                        <span style="flex: 1; color:#888; text-align: center;">Play:
+                                                            <strong
+                                                                style="color:#ccc;">{{gData.diffs[d].played}}</strong><span
+                                                                style="font-size: 0.9em;">/{{gData.diffs[d].count}}</span></span>
+                                                        <span style="width: 100px; color:#888; text-align: right;">Avg:
+                                                            <strong
+                                                                style="color:#ccc;">{{gData.diffs[d].avgScore.toLocaleString()}}</strong></span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <input type="text" v-model="searchDb" placeholder="同期済み楽曲DB内を検索..." class="score-input"
-                                style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.5);">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" v-model="searchDb" placeholder="同期済み楽曲DB内を検索..." class="score-input"
+                                    style="flex: 1; min-width: 0; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                                <select v-model="settings.sortDb" @change="saveToLocal" class="score-input"
+                                    style="width: 140px; padding: 8px; font-size: 13px; background: #222; color: #fff; border: 1px solid #444;">
+                                    <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label
+                                        }}</option>
+                                </select>
+                            </div>
                             <div class="filter-header">
                                 <span class="filter-header-title">難易度 (複数選択可)</span>
                             </div>
                             <div class="chip-group">
                                 <div v-for="d in diffList" :class="['chip', {active: dbFilters.diffs.includes(d)}]"
                                     @click="toggle(dbFilters.diffs, d)">{{d}}</div>
+                            </div>
+                            <div class="filter-header">
+                                <span class="filter-header-title">バージョン (複数選択可)</span>
+                            </div>
+                            <div class="chip-group scroll-x">
+                                <div v-for="v in VERSION_ORDER"
+                                    :class="['chip', {active: dbFilters.versions.includes(v)}]"
+                                    @click="toggle(dbFilters.versions, v)">{{v}}</div>
                             </div>
                             <p style="font-size:12px; color:#aaa; margin-top:10px;">※定数順に上位200件まで表示します</p>
                         </div>
@@ -841,9 +943,17 @@
 
                     <div v-else-if="toolTab === 'all_music'">
                         <div class="glass-card" style="padding:10px; margin: 0 10px 10px 10px;">
-                            <input type="text" v-model="searchAllDb" placeholder="収録時の全曲DBを検索..." class="score-input"
-                                style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.5);">
-                            <p style="font-size:12px; color:#aaa; margin-top:5px;">※タップで難易度・ノーツ数を表示します</p>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" v-model="searchAllDb" placeholder="収録時の全曲DBを検索..."
+                                    class="score-input"
+                                    style="flex: 1; min-width: 0; box-sizing: border-box; padding: 10px; background: rgba(0,0,0,0.5);">
+                                <select v-model="settings.sortAll" @change="saveToLocal" class="score-input"
+                                    style="width: 140px; padding: 8px; font-size: 13px; background: #222; color: #fff; border: 1px solid #444;">
+                                    <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label
+                                        }}</option>
+                                </select>
+                            </div>
+                            <p style="font-size:12px; color:#aaa; margin-top:5px;">※タップで難易度・ノーツ数を表示します。上位200件まで表示。</p>
                         </div>
                         <div v-if="allMusicList.length===0" style="text-align:center; padding: 20px; color:#aaa;">
                             データを読み込み中...</div>

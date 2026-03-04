@@ -37,27 +37,90 @@ const app = createApp({
             { label: 'SSS+', min: 1009000, max: 1010000 }
         ];
 
+        const VERSION_ORDER = [
+            'X-VERSE-X',
+            'X-VERSE',
+            'VERSE',
+            'LUMINOUS+',
+            'LUMINOUS',
+            'SUN+',
+            'SUN',
+            'NEW+',
+            'NEW',
+            'PARADISE LOST',
+            'PARADISE',
+            'CRYSTAL+',
+            'CRYSTAL',
+            'AMAZON+',
+            'AMAZON',
+            'STAR+',
+            'STAR',
+            'AIR+',
+            'AIR',
+            'PLUS',
+            '無印'
+        ];
+
+        const getVersionIndex = (ver) => {
+            const idx = VERSION_ORDER.indexOf(ver);
+            return idx !== -1 ? idx : 999;
+        };
+
+
         const settings = reactive({
             syncDiffs: ['MASTER', 'ULTIMA'],
             syncLevels: ['14', '14+', '15', '15+'],
             syncLamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
             syncScores: [],
+            syncVersions: [],
             excludeMasterIfUltima: false,
             ratingLayout: 'portrait',
-            playerName: ''
+            playerName: '',
+            sortData: 'scoreDesc',
+            sortHistory: 'versionAsc',
+            sortDb: 'constDesc',
+            sortAll: 'versionAsc'
         });
+
+        const sortOptions = [
+            { value: 'scoreDesc', label: 'スコア順 (高い順)' },
+            { value: 'scoreAsc', label: 'スコア順 (低い順)' },
+            { value: 'constDesc', label: '定数順 (高い順)' },
+            { value: 'constAsc', label: '定数順 (低い順)' },
+            { value: 'versionAsc', label: 'バージョン順' },
+            { value: 'titleAsc', label: '曲名順' }
+        ];
+
+        const sortItems = (items, sortType) => {
+            return [...items].sort((a, b) => {
+                const getVerCmp = () => getVersionIndex(a.version) - getVersionIndex(b.version);
+                const getTitleCmp = () => a.title.localeCompare(b.title, 'ja');
+                switch (sortType) {
+                    case 'scoreDesc': return (b.score || 0) - (a.score || 0) || getVerCmp() || getTitleCmp();
+                    case 'scoreAsc': return (a.score || 0) - (b.score || 0) || getVerCmp() || getTitleCmp();
+                    case 'constDesc': return parseFloat(b.const || 0) - parseFloat(a.const || 0) || getVerCmp() || getTitleCmp();
+                    case 'constAsc': return parseFloat(a.const || 0) - parseFloat(b.const || 0) || getVerCmp() || getTitleCmp();
+                    case 'titleAsc': return getTitleCmp();
+                    case 'versionAsc': return getVerCmp() || getTitleCmp();
+                    default: return 0;
+                }
+            });
+        };
+
 
         const filters = reactive({
             diffs: ['MASTER', 'ULTIMA'],
             levels: [],
             scores: [],
-            lamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY']
+            lamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
+            versions: []
         });
 
         const target = reactive({
             diffs: ['MASTER', 'ULTIMA'],
             levels: ['14', '14+', '15', '15+'],
             genres: [],
+            versions: [],
             lamps: ['AJC', 'AJ', 'FC', 'NONE', 'NOPLAY'],
             minScore: 0,
             maxScore: 1010000
@@ -65,7 +128,10 @@ const app = createApp({
 
         const searchSynced = ref('');
         const searchDb = ref('');
-        const dbFilters = reactive({ diffs: ['MASTER', 'ULTIMA'] });
+        const dbFilters = reactive({
+            diffs: ['MASTER', 'ULTIMA'],
+            versions: []
+        });
 
         const toolTab = ref('database');
         const allMusicList = ref([]);
@@ -249,12 +315,11 @@ const app = createApp({
                     });
                 });
 
-                // 2. Save Master Data
                 const txMaster = db.transaction("master_songs", "readwrite");
                 const storeMaster = txMaster.objectStore("master_songs");
                 await storeMaster.clear();
                 allSongs.forEach(s => storeMaster.put(s));
-                masterScoreData.value = allSongs.filter(s => s.score > 0);
+                masterScoreData.value = allSongs;
 
                 syncProgress.value = 40;
                 addLog("マスタデータ取得完了");
@@ -282,6 +347,7 @@ const app = createApp({
                         return (settings.syncDiffs.length === 0 || settings.syncDiffs.includes(d.level)) &&
                                (isSyncLevelsFullySelectedOrEmpty ? true : settings.syncLevels.includes(lv)) &&
                                (settings.syncLamps.length === 0 || settings.syncLamps.includes(lp)) &&
+                               (settings.syncVersions.length === 0 || settings.syncVersions.includes(c.version)) &&
                                (settings.syncScores.length === 0 || settings.syncScores.some(label => {
                                    const r = scoreFilterList.find(f => f.label === label);
                                    return sc >= r.min && sc <= r.max;
@@ -388,16 +454,17 @@ const app = createApp({
         const remainingMusic = computed(() => musicData.value.filter(s => !achievements[s.id]));
         const achievedMusic = computed(() => {
             const q = searchSynced.value.toLowerCase();
-            return musicData.value.filter(s => {
+            const filtered = musicData.value.filter(s => {
                 if (!achievements[s.id]) return false;
                 if (q && !s.title.toLowerCase().includes(q)) return false;
                 return true;
             });
+            return sortItems(filtered, settings.sortHistory);
         });
 
         const filteredMusic = computed(() => {
             const q = searchSynced.value.toLowerCase();
-            return remainingMusic.value.filter(s => {
+            const filtered = remainingMusic.value.filter(s => {
                 if (q && !s.title.toLowerCase().includes(q)) return false;
                 if (settings.excludeMasterIfUltima && s.hasUltima && s.level === 'MASTER') {
                     return false;
@@ -405,13 +472,16 @@ const app = createApp({
                 const dM = filters.diffs.length === 0 || filters.diffs.includes(s.level);
                 const lM = filters.levels.length === 0 || filters.levels.includes(s.levelStr);
                 const lpM = filters.lamps.length === 0 || filters.lamps.includes(s.lamp);
+                const vM = filters.versions.length === 0 || filters.versions.includes(s.version);
                 const sM = filters.scores.length === 0 || filters.scores.some(label => {
                     const r = scoreFilterList.find(f => f.label === label);
                     return s.score >= r.min && s.score <= r.max;
                 });
-                return dM && lM && sM && lpM;
-            }).sort((a, b) => b.score - a.score);
+                return dM && lM && sM && lpM && vM;
+            });
+            return sortItems(filtered, settings.sortData);
         });
+
 
         const genres = computed(() => [...new Set(musicMaster.value.map(m => m.catname))].filter(g => g));
 
@@ -427,12 +497,16 @@ const app = createApp({
             if (dbFilters.diffs.length > 0) {
                 arr = arr.filter(s => dbFilters.diffs.includes(s.level));
             }
+            if (dbFilters.versions.length > 0) {
+                arr = arr.filter(s => dbFilters.versions.includes(s.version));
+            }
 
             if (q) {
                 arr = arr.filter(s => s.title.toLowerCase().includes(q));
             }
-            return arr.sort((a, b) => b.const - a.const).slice(0, 200); // limit to 200 for perf
+            return sortItems(arr, settings.sortDb).slice(0, 200); // limit to 200 for perf
         });
+
 
         const filteredAllMusic = computed(() => {
             let arr = allMusicList.value;
@@ -440,9 +514,10 @@ const app = createApp({
             if (q) {
                 arr = arr.filter(m => m.title.toLowerCase().includes(q) || (m.version && m.version.toLowerCase().includes(q)));
             }
-            // Sort by releaseDate if available, or just keeping the existing order. Limit 200.
-            return arr.slice(0, 200);
+            // Sort by configured sort type. Limit 200.
+            return sortItems(arr, settings.sortAll).slice(0, 200);
         });
+
 
         const toggleSongExpanded = (title) => {
             expandedSongId.value = expandedSongId.value === title ? null : title;
@@ -465,17 +540,22 @@ const app = createApp({
                 obj.ranks = { 'SSS+': 0, 'SSS': 0, 'SS+': 0, 'SS': 0, 'S+': 0, 'S': 0, 'AAA以下': 0 };
             };
 
+            const initDiffBuckets = (obj) => {
+                obj.diffs = {};
+                diffList.forEach(d => {
+                    obj.diffs[d] = { count: 0, played: 0, sumScore: 0 };
+                    initBuckets(obj.diffs[d]);
+                });
+            };
+
             initBuckets(stats.total);
+
 
             const diffList = ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'ULTIMA'];
             diffList.forEach(d => {
                 stats.diffs[d] = { count: 0, played: 0, sumScore: 0 };
                 initBuckets(stats.diffs[d]);
             });
-
-            // O(1) lookup Map for performance
-            const userMusicMap = new Map();
-            (musicData.value || []).forEach(m => userMusicMap.set(m.id, m));
 
             (masterScoreData.value || []).forEach(s => {
                 const diff = s.level;
@@ -493,27 +573,37 @@ const app = createApp({
                 stats.levels[lvStr].count++;
 
                 // Collect Version stats
-                if (!stats.versions[ver]) {
-                    stats.versions[ver] = { count: 0, played: 0, sumScore: 0 };
-                    initBuckets(stats.versions[ver]);
+                // Map unlisted versions to 'その他', or let them pass if they are '不明'
+                let verKey = ver;
+                if (!VERSION_ORDER.includes(verKey) && verKey !== '不明') {
+                    verKey = 'その他';
                 }
-                stats.versions[ver].count++;
+
+                if (!stats.versions[verKey]) {
+                    stats.versions[verKey] = { count: 0, played: 0, sumScore: 0 };
+                    initBuckets(stats.versions[verKey]);
+                    initDiffBuckets(stats.versions[verKey]);
+                }
+                stats.versions[verKey].count++;
+                if (stats.versions[verKey].diffs[diff]) stats.versions[verKey].diffs[diff].count++;
+
+
 
                 // Collect Genre stats
                 if (!stats.genres[gnr]) {
                     stats.genres[gnr] = { count: 0, played: 0, sumScore: 0 };
                     initBuckets(stats.genres[gnr]);
+                    initDiffBuckets(stats.genres[gnr]);
                 }
                 stats.genres[gnr].count++;
+                if (stats.genres[gnr].diffs[diff]) stats.genres[gnr].diffs[diff].count++;
 
-                // O(1) map access
-                const userMusic = userMusicMap.get(s.id);
-                if (userMusic && userMusic.score > 0) {
-                    const score = userMusic.score;
+                if (s.score > 0) {
+                    const score = s.score;
                     const rawRank = getRank(score);
                     const rank = ['SSS+', 'SSS', 'SS+', 'SS', 'S+', 'S'].includes(rawRank) ? rawRank : 'AAA以下';
 
-                    let lamp = userMusic.lamp;
+                    let lamp = s.lamp;
                     if (lamp === 'AJC' || lamp === 'AJ' || lamp === 'FC') {
                         // mapped directly
                     } else {
@@ -532,8 +622,12 @@ const app = createApp({
                     updateObj(stats.total);
                     if (stats.diffs[diff]) updateObj(stats.diffs[diff]);
                     if (stats.levels[lvStr]) updateObj(stats.levels[lvStr]);
-                    updateObj(stats.versions[ver]);
+
+                    updateObj(stats.versions[verKey]);
+                    if (stats.versions[verKey].diffs[diff]) updateObj(stats.versions[verKey].diffs[diff]);
+
                     updateObj(stats.genres[gnr]);
+                    if (stats.genres[gnr].diffs[diff]) updateObj(stats.genres[gnr].diffs[diff]);
                 }
             });
 
@@ -541,11 +635,29 @@ const app = createApp({
             const calcAvg = (obj) => {
                 obj.avgScore = obj.played > 0 ? Math.floor(obj.sumScore / obj.played) : 0;
             };
+            const calcDiffAvgs = (obj) => {
+                if (obj.diffs) {
+                    Object.values(obj.diffs).forEach(calcAvg);
+                }
+            };
+
             calcAvg(stats.total);
             Object.values(stats.diffs).forEach(calcAvg);
             Object.values(stats.levels).forEach(calcAvg);
-            Object.values(stats.versions).forEach(calcAvg);
-            Object.values(stats.genres).forEach(calcAvg);
+            Object.values(stats.versions).forEach(v => { calcAvg(v); calcDiffAvgs(v); });
+            Object.values(stats.genres).forEach(g => { calcAvg(g); calcDiffAvgs(g); });
+
+            // Reorder versions based on VERSION_ORDER
+            const sortedVersions = {};
+            VERSION_ORDER.forEach(vName => {
+                if (stats.versions[vName]) {
+                    sortedVersions[vName] = stats.versions[vName];
+                }
+            });
+            if (stats.versions['不明']) sortedVersions['不明'] = stats.versions['不明'];
+            if (stats.versions['その他']) sortedVersions['その他'] = stats.versions['その他'];
+
+            stats.versions = sortedVersions;
 
             return stats;
         });
@@ -626,6 +738,7 @@ const app = createApp({
                        (target.diffs.length === 0 || target.diffs.includes(s.level)) &&
                        (target.levels.length === 0 || target.levels.includes(s.levelStr)) &&
                        (target.lamps.length === 0 || target.lamps.includes(s.lamp)) &&
+                       (target.versions.length === 0 || target.versions.includes(s.version)) &&
                        (s.score >= target.minScore && s.score <= target.maxScore);
             });
 
@@ -713,6 +826,7 @@ const app = createApp({
             tab, isLoggedIn, auth, masterScoreData, musicData, achievements,
             isSyncing, syncStatus, syncProgress, syncLogs,
             diffList, levelList, scoreFilterList, settings, filters, target,
+            sortOptions, VERSION_ORDER,
             drawCount, results, musicMaster, chartSettings, chartOptions,
             enableAnimation, isAnimating, slots, animationStatusText,
             showModal, generatedImage, showExcludedModal,

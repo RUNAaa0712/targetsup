@@ -385,6 +385,8 @@
                                 @click="toolTab = 'all_music'; fetchAllMusicDB()">全楽曲図鑑<span
                                     v-if="allMusicList.length===0"
                                     style="color:var(--cyan);font-size:10px;margin-left:4px;">(DL)</span></div>
+                            <div :class="['chip', {active: toolTab === 'force'}]" @click="toolTab = 'force'"
+                                style="border-color: #ff6600;">⚡FORCE値</div>
                         </div>
                     </div>
 
@@ -991,53 +993,468 @@
                         <div v-if="filteredAllMusic.length===0 && allMusicList.length > 0"
                             style="text-align:center; padding: 20px; color:#aaa;">一致する楽曲がありません</div>
                     </div>
-                </div>
-            </transition>
-        </main>
 
-        <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <span style="color:var(--cyan); font-weight:bold;">GENERATED ANALYSIS</span>
-                    <button class="modal-close-x" @click="showModal = false">×</button>
-                </div>
-                <div class="modal-body">
-                    <img :src="generatedImage" class="result-img-preview">
-                    <p class="modal-tip">※画像を長押しして保存してください</p>
-                </div>
-                <button @click="showModal = false" class="btn-action"
-                    style="margin-top:10px; background:#333; color:#fff;">閉じる</button>
-            </div>
-        </div>
+                    <!-- ========== FORCE VALUE SECTION ========== -->
+                    <div v-else-if="toolTab === 'force'">
+                        <div v-if="!forceResult" class="glass-card" style="text-align:center; padding:30px;">
+                            <p style="color:#888;">データがありません。先にデータを同期してください。</p>
+                        </div>
+                        <template v-else>
+                            <!-- Beautiful Dashboard Design -->
+                            <div class="fd-dashboard">
+                                <div class="fd-dash-header">
+                                    <div class="fd-dash-title">
+                                        <i class="fas fa-bolt"></i> CHUNIFORCE 結果
+                                    </div>
+                                    <div class="fd-dash-player">
+                                        {{ settings.playerName || 'GUEST' }}
+                                    </div>
+                                </div>
 
-        <div v-if="showExcludedModal" class="modal-overlay" @click.self="showExcludedModal = false">
-            <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
-                <div class="modal-header">
-                    <span style="color:var(--cyan); font-weight:bold;">ポゼ対象外 (ULTIMAが存在するMASTER譜面)</span>
-                    <button class="modal-close-x" @click="showExcludedModal = false">×</button>
-                </div>
-                <div class="modal-body" style="overflow-y: auto; padding-right: 5px; text-align: left;">
-                    <div v-for="s in excludedMasterSongs" :key="s.id" class="song-item"
-                        style="padding: 8px; margin-bottom: 5px; opacity: 0.8;">
-                        <img :src="s.image" style="width: 32px; height: 32px;">
-                        <div class="song-info">
-                            <span class="song-title" style="font-size: 11px;">{{ s.title }}</span>
-                            <div style="font-size: 9px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}
+                                <div class="fd-cards-row">
+                                    <div class="fd-main-card">
+                                        <div class="fd-class-display">
+                                            <div class="fd-class-letter anim-text-gradient"
+                                                :class="'force-grad-' + forceResult.forceClass.colorName">{{
+                                                forceResult.forceClass.className }}</div>
+                                            <div class="fd-class-stars">
+                                                <span v-for="n in 4" :key="n"
+                                                    :class="n <= forceResult.forceClass.starCount ? 'star-on' : 'star-off'">★</span>
+                                            </div>
+                                        </div>
+                                        <div class="fd-score-display">
+                                            <div class="fd-score-label">CHUNIFORCE</div>
+                                            <div class="fd-score-value anim-text-gradient"
+                                                :class="'force-grad-' + forceResult.forceClass.colorName">{{
+                                                forceResult.total.toFixed(3) }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="fd-theory-card">
+                                        <div class="fd-theory-label">CHUNIFORCE 理論値</div>
+                                        <div class="fd-theory-value">{{ forceResult.maxTotal.toFixed(3) }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="fd-breakdown-row">
+                                    <div class="fd-bk-item">
+                                        <div class="fd-bk-label">ベスト枠 average</div>
+                                        <div class="fd-bk-val">{{ forceResult.bestAvg.toFixed(4) }}</div>
+                                    </div>
+                                    <div class="fd-bk-item">
+                                        <div class="fd-bk-label">理論値枠 average</div>
+                                        <div class="fd-bk-val">{{ forceResult.ajcAvg.toFixed(4) }}</div>
+                                    </div>
+                                    <div class="fd-bk-item">
+                                        <div class="fd-bk-label">理論値数ボーナス</div>
+                                        <div class="fd-bk-val txt-cyan">+{{ forceResult.theoryBonus.toFixed(4) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Image Generation Button -->
+                            <button @click="generateForceImage" class="btn-action"
+                                style="background-color: #06b6d4; color: #000; width: 100%; padding: 14px; font-weight: bold; font-size: 15px; border-radius: 8px; margin-bottom: 30px; letter-spacing: 1px;">
+                                <i class="fas fa-image" style="margin-right: 8px;"></i> 画像を生成
+                            </button>
+
+                            <!-- Beautiful Detail Table Layout (Responsive scrolling!) -->
+                            <div style="margin-top: 20px;">
+
+                                <!-- Best Frame Table -->
+                                <h3
+                                    style="color:#e2e8f0; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-trophy" style="color:#fbbf24;"></i> ベスト枠（上位{{
+                                    forceResult.bestFrame.length }}曲）
+                                </h3>
+                                <div class="force-detail-table-wrap">
+                                    <table class="force-detail-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">#</th>
+                                                <th>曲名</th>
+                                                <th style="width: 50px;">難易度</th>
+                                                <th style="width: 50px;">定数</th>
+                                                <th style="width: 80px;">スコア</th>
+                                                <th style="width: 50px;">ランプ</th>
+                                                <th style="width: 60px;">ランク</th>
+                                                <th style="width: 60px;">基準値</th>
+                                                <th style="width: 75px;">スコア補正</th>
+                                                <th style="width: 70px;">ランプ補正</th>
+                                                <th style="width: 80px;">単曲FORCE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(s, i) in forceResult.bestFrame" :key="'bf-'+i">
+                                                <td class="rank-num"
+                                                    :class="i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'">
+                                                    #{{ i + 1 }}</td>
+                                                <td class="song-title">{{ s.title }}</td>
+                                                <td><span class="fd-diff-pill" :class="s.level.split(' ')[0]">{{
+                                                        s.level.substring(0,3) }}</span></td>
+                                                <td class="txt-const">{{ (s.const % 1 === 0 ? s.const.toFixed(1) :
+                                                    s.const) }}</td>
+                                                <td class="txt-score">{{ s.score.toLocaleString() }}</td>
+                                                <td><span class="fd-lamp-pill" :class="s.lamp">{{ s.lamp === 'NONE'
+                                                        ? 'CLR' : s.lamp }}</span></td>
+                                                <td><span class="fd-rank-pill"
+                                                        :class="s.details.rankStr.replace('+','-PLUS')">{{
+                                                        s.details.rankStr }}</span></td>
+                                                <td class="txt-base">{{ s.details.baseValue }}</td>
+                                                <td class="txt-score-bonus">{{ s.details.scoreBonus }}</td>
+                                                <td class="txt-lamp-bonus">{{ s.details.lampBonus }}</td>
+                                                <td class="txt-force-total">{{ s.singleForce.toFixed(4) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- AJC Frame Table -->
+                                <h3
+                                    style="color:#e2e8f0; font-size: 16px; margin-bottom: 12px; margin-top: 30px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-gem" style="color:#60a5fa;"></i> 理論値枠（対象上位50曲）
+                                    <span
+                                        style="font-size:12px; font-weight:normal; background:rgba(255,255,255,0.1); padding:2px 10px; border-radius:12px;">{{
+                                        forceResult.ajcFrame.length }}曲</span>
+                                </h3>
+                                <div class="force-detail-table-wrap">
+                                    <table class="force-detail-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">#</th>
+                                                <th>曲名</th>
+                                                <th style="width: 70px;">難易度</th>
+                                                <th style="width: 60px;">定数</th>
+                                                <th style="width: 100px;">単曲AJC-FORCE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(s, i) in forceResult.ajcFrame" :key="'af-'+i">
+                                                <td class="rank-num"
+                                                    :class="i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'">
+                                                    #{{ i + 1 }}</td>
+                                                <td class="song-title">{{ s.title }}</td>
+                                                <td><span class="fd-diff-pill" :class="s.level.split(' ')[0]">{{
+                                                        s.level.substring(0,3) }}</span></td>
+                                                <td class="txt-const">{{ (s.const % 1 === 0 ? s.const.toFixed(1) :
+                                                    s.const) }}</td>
+                                                <td class="txt-force-total">{{ s.ajcForce.toFixed(4) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                    </div>
+
+                    <!-- OFF-SCREEN RENDERING AREA FOR HTML2CANVAS -->
+                    <div
+                        style="position: absolute; top: -10000px; left: -10000px; width: 1400px; pointer-events: none;">
+                        <div id="force-full-capture" style="padding:10px; width: 1400px; background: #05080c;">
+                            <!-- Header Banner -->
+                            <div class="force-header-banner">
+                                <div class="force-header-left">
+                                    <div class="force-player-label">PLAYER'S NAME</div>
+                                    <div class="force-player-name">{{ settings.playerName || 'GUEST' }}</div>
+                                </div>
+                                <div class="force-header-right">
+                                    <div class="force-emblem-wrap">
+                                        <div class="force-class-emblem-v2"
+                                            :class="'force-color-' + forceResult.forceClass.colorName">
+                                            <svg class="force-class-numeral-v2" width="60" height="34"
+                                                style="overflow: visible;">
+                                                <defs>
+                                                    <linearGradient id="svg-grad-num-grey" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#9ca3af" />
+                                                        <stop offset="50%" stop-color="#cbd5e1" />
+                                                        <stop offset="100%" stop-color="#9ca3af" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-blue" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#3b82f6" />
+                                                        <stop offset="50%" stop-color="#93c5fd" />
+                                                        <stop offset="100%" stop-color="#3b82f6" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-green" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#10b981" />
+                                                        <stop offset="50%" stop-color="#6ee7b7" />
+                                                        <stop offset="100%" stop-color="#10b981" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-orange" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#f59e0b" />
+                                                        <stop offset="50%" stop-color="#fcd34d" />
+                                                        <stop offset="100%" stop-color="#f59e0b" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-red" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#ef4444" />
+                                                        <stop offset="50%" stop-color="#fca5a5" />
+                                                        <stop offset="100%" stop-color="#ef4444" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-purple" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#a855f7" />
+                                                        <stop offset="50%" stop-color="#d8b4fe" />
+                                                        <stop offset="100%" stop-color="#a855f7" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-silver" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#e2e8f0" />
+                                                        <stop offset="50%" stop-color="#f8fafc" />
+                                                        <stop offset="100%" stop-color="#e2e8f0" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-gold" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#fbbf24" />
+                                                        <stop offset="50%" stop-color="#fef08a" />
+                                                        <stop offset="100%" stop-color="#fbbf24" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-violet" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#d946ef" />
+                                                        <stop offset="50%" stop-color="#fbcfe8" />
+                                                        <stop offset="100%" stop-color="#d946ef" />
+                                                    </linearGradient>
+                                                    <linearGradient id="svg-grad-num-goldx" x1="0%" y1="0%" x2="100%"
+                                                        y2="0%">
+                                                        <stop offset="0%" stop-color="#34d399" />
+                                                        <stop offset="30%" stop-color="#3b82f6" />
+                                                        <stop offset="70%" stop-color="#a855f7" />
+                                                        <stop offset="100%" stop-color="#fde047" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <text x="30" y="32" font-family="'Segoe UI', Arial, sans-serif"
+                                                    font-size="32" font-weight="900" text-anchor="middle"
+                                                    :fill="'url(#svg-grad-num-' + forceResult.forceClass.colorName + ')'"
+                                                    style="filter: drop-shadow(0px 0px 4px rgba(255,255,255,0.3));">
+                                                    {{ forceResult.forceClass.className }}
+                                                </text>
+                                            </svg>
+                                            <div class="force-class-stars-v2">
+                                                <span v-for="n in 4" :key="n"
+                                                    :class="{'star-active': n <= forceResult.forceClass.starCount, 'star-inactive': n > forceResult.forceClass.starCount}">★</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="force-total-wrap">
+                                        <div class="force-total-label">CHUNIFORCE</div>
+                                        <svg class="force-total-number" width="180" height="46"
+                                            style="overflow: visible; margin-top:2px;">
+                                            <defs>
+                                                <linearGradient id="svg-grad-sum-grey" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#9ca3af" />
+                                                    <stop offset="50%" stop-color="#cbd5e1" />
+                                                    <stop offset="100%" stop-color="#9ca3af" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-blue" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#3b82f6" />
+                                                    <stop offset="50%" stop-color="#93c5fd" />
+                                                    <stop offset="100%" stop-color="#3b82f6" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-green" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#10b981" />
+                                                    <stop offset="50%" stop-color="#6ee7b7" />
+                                                    <stop offset="100%" stop-color="#10b981" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-orange" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#f59e0b" />
+                                                    <stop offset="50%" stop-color="#fcd34d" />
+                                                    <stop offset="100%" stop-color="#f59e0b" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-red" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                    <stop offset="0%" stop-color="#ef4444" />
+                                                    <stop offset="50%" stop-color="#fca5a5" />
+                                                    <stop offset="100%" stop-color="#ef4444" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-purple" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#a855f7" />
+                                                    <stop offset="50%" stop-color="#d8b4fe" />
+                                                    <stop offset="100%" stop-color="#a855f7" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-silver" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#e2e8f0" />
+                                                    <stop offset="50%" stop-color="#f8fafc" />
+                                                    <stop offset="100%" stop-color="#e2e8f0" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-gold" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#fbbf24" />
+                                                    <stop offset="50%" stop-color="#fef08a" />
+                                                    <stop offset="100%" stop-color="#fbbf24" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-violet" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#d946ef" />
+                                                    <stop offset="50%" stop-color="#fbcfe8" />
+                                                    <stop offset="100%" stop-color="#d946ef" />
+                                                </linearGradient>
+                                                <linearGradient id="svg-grad-sum-goldx" x1="0%" y1="0%" x2="100%"
+                                                    y2="0%">
+                                                    <stop offset="0%" stop-color="#34d399" />
+                                                    <stop offset="30%" stop-color="#3b82f6" />
+                                                    <stop offset="70%" stop-color="#a855f7" />
+                                                    <stop offset="100%" stop-color="#fde047" />
+                                                </linearGradient>
+                                            </defs>
+                                            <text x="180" y="42" font-family="'Segoe UI', Arial, sans-serif"
+                                                font-size="42" font-weight="900" text-anchor="end"
+                                                :fill="'url(#svg-grad-sum-' + forceResult.forceClass.colorName + ')'">
+                                                {{ forceResult.total.toFixed(3) }}
+                                            </text>
+                                        </svg>
+                                    </div>
+                                    <div class="force-stats-wrap">
+                                        <div class="force-stat-row">
+                                            <span class="force-bd-label">ベスト枠</span>
+                                            <span class="force-bd-value">{{ forceResult.bestAvg.toFixed(4)
+                                                }}</span>
+                                        </div>
+                                        <div class="force-stat-row">
+                                            <span class="force-bd-label">理論値枠</span>
+                                            <span class="force-bd-value">{{ forceResult.ajcAvg.toFixed(4)
+                                                }}</span>
+                                        </div>
+                                        <div class="force-stat-row">
+                                            <span class="force-bd-label">理論値ボーナス</span>
+                                            <span class="force-bd-value ds-bonus" style="color:#00e5ff;">+{{
+                                                forceResult.theoryBonus.toFixed(4) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="force-tables-container"
+                                style="display: flex; gap: 15px; margin: 15px 0 0 0; align-items: flex-start;">
+                                <!-- Best Frame Grid -->
+                                <div class="force-table-card" style="flex: 1; min-width: 0;">
+                                    <div class="section-label-v2">ベスト枠 ({{ forceResult.bestFrame.length }}曲)
+                                    </div>
+                                    <div class="force-grid-wrap">
+                                        <div class="ls-grid force-best-section">
+                                            <div v-for="(s, i) in forceResult.bestFrame" :key="'bf-'+i" class="ls-card">
+                                                <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                <div class="fc-top-badges">
+                                                    <span class="fc-rank-badge bg-best">#{{ i + 1 }}</span>
+                                                    <span class="fc-diff-badge"
+                                                        :class="'fc-bg-' + s.level.split(' ')[0]">{{
+                                                        s.level.substring(0,3) }} <span class="const">{{
+                                                            (s.const %
+                                                            1 === 0 ? s.const.toFixed(1) : s.const)
+                                                            }}</span></span>
+                                                </div>
+                                                <div class="fc-bottom-content">
+                                                    <div class="fc-title">{{ s.title }}</div>
+                                                    <div class="fc-stats-row">
+                                                        <div class="fc-score-group">
+                                                            <span class="fc-score-val">{{
+                                                                s.score.toLocaleString()
+                                                                }}</span>
+                                                            <span v-if="s.lamp && s.lamp !== 'NOPLAY'"
+                                                                :class="['fc-lamp', s.lamp]">{{ s.lamp ===
+                                                                'NONE' ?
+                                                                'CLR' : s.lamp }}</span>
+                                                        </div>
+                                                        <div class="fc-force-val">{{ s.singleForce.toFixed(4) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AJC Frame Grid -->
+                                <div class="force-table-card" style="flex: 1; min-width: 0;">
+                                    <div class="section-label-v2">理論値枠 ({{ forceResult.ajcFrame.length }}曲)
+                                    </div>
+                                    <div class="force-grid-wrap">
+                                        <div class="ls-grid force-ajc-section">
+                                            <div v-for="(s, i) in forceResult.ajcFrame" :key="'af-'+i" class="ls-card">
+                                                <img :src="s.image" class="ls-card-bg" crossorigin="anonymous">
+                                                <div class="fc-top-badges">
+                                                    <span class="fc-rank-badge bg-ajc">#{{ i + 1 }}</span>
+                                                    <span class="fc-diff-badge"
+                                                        :class="'fc-bg-' + s.level.split(' ')[0]">{{
+                                                        s.level.substring(0,3) }} <span class="const">{{
+                                                            (s.const %
+                                                            1 === 0 ? s.const.toFixed(1) : s.const)
+                                                            }}</span></span>
+                                                </div>
+                                                <div class="fc-bottom-content">
+                                                    <div class="fc-title">{{ s.title }}</div>
+                                                    <div class="fc-stats-row">
+                                                        <div class="fc-score-group">
+                                                            <span class="fc-score-val"
+                                                                style="color:#2dd4bf;">1,010,000</span>
+                                                            <span class="fc-lamp AJC" style="color:#ffd700;">AJC</span>
+                                                        </div>
+                                                        <div class="fc-force-val">{{ s.ajcForce.toFixed(4) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="score-val" style="font-size: 13px;">{{ s.score.toLocaleString() }}</div>
                     </div>
-                    <div v-if="excludedMasterSongs.length === 0"
-                        style="text-align: center; color: #888; padding: 20px;">
-                        対象の楽曲はありません
-                    </div>
+                    </template>
                 </div>
-                <button @click="showExcludedModal = false" class="btn-action"
-                    style="margin-top:10px; background:#333; color:#fff; flex-shrink: 0;">閉じる</button>
-            </div>
-        </div>
 
-        <nav-bar :tab="tab" @update:tab="tab = $event"></nav-bar>
+    </div>
+    </transition>
+    </main>
+
+    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="color:var(--cyan); font-weight:bold;">GENERATED ANALYSIS</span>
+                <button class="modal-close-x" @click="showModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <img :src="generatedImage" class="result-img-preview">
+                <p class="modal-tip">※画像を長押しして保存してください</p>
+            </div>
+            <button @click="showModal = false" class="btn-action"
+                style="margin-top:10px; background:#333; color:#fff;">閉じる</button>
+        </div>
+    </div>
+
+    <div v-if="showExcludedModal" class="modal-overlay" @click.self="showExcludedModal = false">
+        <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <span style="color:var(--cyan); font-weight:bold;">ポゼ対象外 (ULTIMAが存在するMASTER譜面)</span>
+                <button class="modal-close-x" @click="showExcludedModal = false">×</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding-right: 5px; text-align: left;">
+                <div v-for="s in excludedMasterSongs" :key="s.id" class="song-item"
+                    style="padding: 8px; margin-bottom: 5px; opacity: 0.8;">
+                    <img :src="s.image" style="width: 32px; height: 32px;">
+                    <div class="song-info">
+                        <span class="song-title" style="font-size: 11px;">{{ s.title }}</span>
+                        <div style="font-size: 9px; color:#888;">{{ s.level }} {{ s.levelStr }} | C: {{ s.const }}
+                        </div>
+                    </div>
+                    <div class="score-val" style="font-size: 13px;">{{ s.score.toLocaleString() }}</div>
+                </div>
+                <div v-if="excludedMasterSongs.length === 0" style="text-align: center; color: #888; padding: 20px;">
+                    対象の楽曲はありません
+                </div>
+            </div>
+            <button @click="showExcludedModal = false" class="btn-action"
+                style="margin-top:10px; background:#333; color:#fff; flex-shrink: 0;">閉じる</button>
+        </div>
+    </div>
+
+    <nav-bar :tab="tab" @update:tab="tab = $event"></nav-bar>
     </div>
 
     <script type="module" src="js/app.js"></script>

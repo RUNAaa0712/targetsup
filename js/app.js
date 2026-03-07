@@ -3,6 +3,7 @@ import { initDB } from './utils/db.js';
 import { getStoredAuth, storeAuth, clearAuth, login, register } from './utils/auth.js';
 import { fetchMusicData, fetchConstants, fetchUserScores } from './utils/sync.js';
 import { calculateRating, getRank, getRankThreshold } from './utils/rating.js';
+import { calculateSingleForce, calculateAjcForce, getForceClass, getForceDetails } from './utils/force.js';
 
 import SyncOverlay from './components/SyncOverlay.js';
 import SlotMachine from './components/SlotMachine.js';
@@ -728,6 +729,80 @@ const app = createApp({
             };
         });
 
+        // Force Value Logic
+        const forceResult = computed(() => {
+            if (!masterScoreData.value.length) return null;
+
+            // 1. Calculate single FORCE for all songs with scores
+            const allForced = masterScoreData.value.map(s => {
+                const singleForce = calculateSingleForce(s.score, s.const, s.lamp);
+                const details = getForceDetails(s.score, s.const, s.lamp);
+                return { ...s, singleForce, details };
+            }).filter(s => s.singleForce > 0).sort((a, b) => b.singleForce - a.singleForce);
+
+            // Best 50
+            const bestFrame = allForced.slice(0, 50);
+            const bestAvg = bestFrame.length > 0
+                ? bestFrame.reduce((sum, s) => sum + s.singleForce, 0) / 50
+                : 0;
+
+            // 2. Theoretical (AJC) frame: songs with score === 1,010,000
+            const ajcSongs = masterScoreData.value
+                .filter(s => s.score >= 1010000)
+                .map(s => ({ ...s, ajcForce: calculateAjcForce(s.const) }))
+                .sort((a, b) => b.ajcForce - a.ajcForce);
+            const ajcFrame = ajcSongs.slice(0, 50);
+            const ajcAvg = ajcFrame.length > 0
+                ? ajcFrame.reduce((sum, s) => sum + s.ajcForce, 0) / 50
+                : 0;
+
+            // 3. Theoretical count bonus: MAS/ULT AJC count / 10000
+            const masUltAjcCount = masterScoreData.value.filter(
+                s => (s.level === 'MASTER' || s.level === 'ULTIMA') && s.score >= 1010000
+            ).length;
+            const theoryBonus = masUltAjcCount / 10000;
+
+            // Total CHUNIFORCE
+            const totalForce = bestAvg + ajcAvg + theoryBonus;
+
+            // --- Max theoretical value (all songs AJC) ---
+            const allMaxForced = masterScoreData.value.map(s => {
+                const maxForce = calculateSingleForce(1010000, s.const, 'AJC');
+                return { ...s, singleForce: maxForce };
+            }).sort((a, b) => b.singleForce - a.singleForce);
+            const maxBestFrame = allMaxForced.slice(0, 50);
+            const maxBestAvg = maxBestFrame.length > 0
+                ? maxBestFrame.reduce((sum, s) => sum + s.singleForce, 0) / 50
+                : 0;
+            const allMaxAjc = masterScoreData.value
+                .map(s => ({ ...s, ajcForce: calculateAjcForce(s.const) }))
+                .sort((a, b) => b.ajcForce - a.ajcForce);
+            const maxAjcFrame = allMaxAjc.slice(0, 50);
+            const maxAjcAvg = maxAjcFrame.length > 0
+                ? maxAjcFrame.reduce((sum, s) => sum + s.ajcForce, 0) / 50
+                : 0;
+            const masUltTotal = masterScoreData.value.filter(
+                s => s.level === 'MASTER' || s.level === 'ULTIMA'
+            ).length;
+            const maxTheoryBonus = masUltTotal / 10000;
+            const maxForce = maxBestAvg + maxAjcAvg + maxTheoryBonus;
+
+            // CLASS
+            const forceClass = getForceClass(totalForce);
+
+            return {
+                total: totalForce,
+                maxTotal: maxForce,
+                bestAvg,
+                ajcAvg,
+                theoryBonus,
+                masUltAjcCount,
+                bestFrame,
+                ajcFrame,
+                forceClass
+            };
+        });
+
         // Lottery Logic
         const drawLottery = async () => {
             let pool = remainingMusic.value.filter(s => {
@@ -811,6 +886,36 @@ const app = createApp({
              } catch (err) {
                  console.error("生成失敗:", err);
                  alert("画像の生成中にエラーが発生しました。");
+             } finally {
+                 syncStatus.value = "";
+             }
+        };
+
+        const generateForceImage = async () => {
+             const element = document.getElementById('force-full-capture');
+             if (!element) return;
+             syncStatus.value = "画像を生成中...";
+             try {
+                // eslint-disable-next-line no-undef
+                 const canvas = await html2canvas(element, {
+                     useCORS: true,
+                     allowTaint: false,
+                     scale: 2,
+                     backgroundColor: "#05080c",
+                     width: 1400,         // 強制的に1400px幅のキャンバスを生成
+                     windowWidth: 1400,   // スマートフォンサイズに依存しないようウィンドウ幅を偽装
+                     onclone: (clonedDoc) => {
+                         const target = clonedDoc.getElementById('force-full-capture');
+                         target.style.display = 'block';
+                     }
+                 });
+                 generatedImage.value = canvas.toDataURL("image/png");
+                 showModal.value = true;
+             } catch (err) {
+                 console.error("生成失敗:", err);
+                 alert("画像の生成中にエラーが発生しました。");
+             } finally {
+                 syncStatus.value = "";
              }
         };
 
@@ -836,7 +941,8 @@ const app = createApp({
             toggleAchievement, resetAchievements, toggle, selectAll, clearAll, drawLottery,
             saveToLocal, generateRatingImage, checkCondition, getRank, getRankThreshold,
             remainingMusic, achievedMusic, filteredMusic, genres, groupedByConst, ratingFrames,
-            excludedMasterSongs
+            excludedMasterSongs,
+            forceResult, generateForceImage
         };
     }
 });
